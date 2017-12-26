@@ -1,7 +1,5 @@
 package cn.com.fotic.eimp.utils;
 
-import groovy.util.logging.Log;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -97,7 +95,7 @@ public class VerificationUtils {
 			case "C":
 				return Pattern.matches(REGEX_TW_CARD, cardNo);
 			case "X":
-				return  Pattern.matches("", cardNo);
+				return  true;
 			default:
 				return false;
 			}
