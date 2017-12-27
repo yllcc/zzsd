@@ -108,8 +108,8 @@ public class VerificationUtils {
 	 * @param name
 	 * @return boolean 
 	 */
-	public boolean nameValidate(String name){
-		if(StringUtils.isNotEmpty(name)&& name.length()<=30){
+	public static boolean nameValidate(String name){
+		if(StringUtils.isNotEmpty(name)&& name.length()<=50){
 			return true;
 		}
 		return false;
@@ -120,7 +120,7 @@ public class VerificationUtils {
 	 * @param phoneNo
 	 * @return boolean
 	 */
-	public boolean phoneCheck(String phoneNo){
+	public static boolean phoneCheck(String phoneNo){
 		return Pattern.matches(REGEX_MOBILE, phoneNo);
 	}
 	
