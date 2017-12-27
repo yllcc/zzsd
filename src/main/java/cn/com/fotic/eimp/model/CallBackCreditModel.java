@@ -1,4 +1,4 @@
-package cn.com.fotic.eimp.repository.model;
+package cn.com.fotic.eimp.model;
 
 public class CallBackCreditModel {
 	private String  brNo;//合作机构号

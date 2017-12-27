@@ -1,4 +1,4 @@
-package cn.com.fotic.eimp.repository.model;
+package cn.com.fotic.eimp.model;
 
 public class UserCreditReturnModel {
 	private String  reCode;//01-接收成功  02-接收失败

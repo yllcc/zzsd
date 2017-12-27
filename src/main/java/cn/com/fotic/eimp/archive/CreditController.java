@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ch.qos.logback.classic.Logger;
-import cn.com.fotic.eimp.repository.model.UserCreditModel;
-import cn.com.fotic.eimp.repository.model.UserCreditReturnModel;
+import cn.com.fotic.eimp.model.UserCreditModel;
+import cn.com.fotic.eimp.model.UserCreditReturnModel;
 import cn.com.fotic.eimp.utils.VerificationUtils;
 import lombok.extern.slf4j.Slf4j;
 

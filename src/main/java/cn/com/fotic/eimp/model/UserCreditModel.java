@@ -1,4 +1,4 @@
-package cn.com.fotic.eimp.repository.model;
+package cn.com.fotic.eimp.model;
 
 public class UserCreditModel {
 	private String  appId;
