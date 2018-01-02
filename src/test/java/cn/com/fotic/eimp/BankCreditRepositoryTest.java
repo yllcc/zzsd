@@ -21,7 +21,6 @@ public class BankCreditRepositoryTest {
 	@Test
 	public void save() {
 		BankCredit bankCredit=new BankCredit();
-		bankCredit.setId("2");
 		bankCredit.setSerial_No("sasdasas");
 		bankCredit.setCust_name("asd");
 		bankCredit.setCert_type("2");
@@ -45,7 +44,7 @@ public class BankCreditRepositoryTest {
 		bankCredit.setAttributes1("1");
 		bankCredit.setAttributes2("asas");
 		BankCreditRepository.save(bankCredit);
-		BankCredit s=BankCreditRepository.getOptName("1");
+		BankCredit s=BankCreditRepository.getOptName(2);
 		System.out.println(s.toString());
 	}
 }

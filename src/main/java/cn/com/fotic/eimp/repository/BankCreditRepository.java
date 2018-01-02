@@ -8,5 +8,5 @@ import cn.com.fotic.eimp.repository.entity.BankCredit;
 
 public interface BankCreditRepository extends JpaRepository<BankCredit, Long> {
 	@Query(nativeQuery = true,value = " select * from BANK_CREDIT where id = :id")
-    public BankCredit getOptName(@Param("id") String id);
+    public BankCredit getOptName(@Param("id") Integer id);
 }

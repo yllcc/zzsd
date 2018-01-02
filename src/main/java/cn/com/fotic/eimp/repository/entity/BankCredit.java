@@ -3,7 +3,10 @@ package cn.com.fotic.eimp.repository.entity;
 import java.util.Date;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import lombok.Data;
@@ -19,7 +22,9 @@ import lombok.ToString;
 @Table(name = "BANK_CREDIT")
 public class BankCredit {
 	@Id
-	private String id;
+	@SequenceGenerator(name = "SEQ_BANK_CREDIT", sequenceName = "SEQ_BANK_CREDIT",allocationSize=1)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_BANK_CREDIT")  
+	private Integer id;
 	private String  serial_No;//流水号
 	private String  cust_name   ;//客户名称'
 	private String  cert_type  ;//证件类型
