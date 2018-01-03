@@ -63,7 +63,8 @@ public class CustomerScoreController {
 		String custName = user.getContent().getCustName();
 		// 查询征信数据库
 		creditstartService.creditOracle(businessNo, custName, idType, idNo);
-		log.info(businessNo);
+		creditstartService.creditCallBack(businessNo, "99");
+		log.info("查询征信处理成功,业务流水号："+businessNo);
 
 	}
 
@@ -88,7 +89,7 @@ public class CustomerScoreController {
 		// UserCreditModel userModel=new UserCreditModel();
 		// for(UserCreditModel user:userList){
 		// 信贷业务号
-		String appId = user.getContent().getBusinessNo();
+		String businessNo = user.getContent().getBusinessNo();
 		// 证件类型
 		String idType = user.getContent().getIdType();
 		// 证件号码
@@ -100,13 +101,10 @@ public class CustomerScoreController {
 		boolean verification = creditstartService.VerificationService(custName, idNo, idType);
 		if (verification == true) {
 			log.info("调用征信......");
-			log.info(appId + ":开始处理");
+			log.info(businessNo + ":开始处理");
 			String json = JaxbUtil.toJSon(user);
-			redisTemplate.opsForValue().set(appId, json);
-			jmsMessagingTemplate.convertAndSend(archiveBufferQueue, appId);
-			/*
-			 * rm.setBusinessNo(appId); rm.setFraudScore("1000");
-			 */
+			redisTemplate.opsForValue().set(businessNo, json);
+			jmsMessagingTemplate.convertAndSend(archiveBufferQueue,businessNo);		
 			um.setReCode("01");
 			um.setReDesc("成功");
 			return um;

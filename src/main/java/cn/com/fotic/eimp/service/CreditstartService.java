@@ -1,5 +1,12 @@
 package cn.com.fotic.eimp.service;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -13,9 +20,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
+import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
+import cn.com.fotic.eimp.model.CallBackUserCreditContentMode;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.repository.BankCreditRepository;
 import cn.com.fotic.eimp.repository.CreditRepository;
@@ -183,7 +194,8 @@ public class CreditstartService {
 		/*
 		 * Connection con = null;// 创建一个数据库连接 PreparedStatement pre = null;//
 		 * 创建预编译语句对象，一般都是用这个而不用Statement ResultSet result = null;// 创建一个结果集对象
-		 */ BankCredit um = new BankCredit();
+		 */ 
+		 BankCredit um = new BankCredit();
 		try {
 			/*
 			 * Class.forName("oracle.jdbc.driver.OracleDriver");// 加载Oracle驱动程序
@@ -193,11 +205,10 @@ public class CreditstartService {
 			 * String password = "wmxt_hd";// 你安装时选设置的密码 con =
 			 * DriverManager.getConnection(url, user, password);// 获取连接 log.info("连接成功！");
 			 */
-
-			BackCredit cm = creditRepository.getOptName(cust_name, cert_type, cert_num);
-			log.info(cm.getCert_num() + "1111111" + businessNo + cm.getCust_name() + cm.getCert_type());
-			if (cm != null || !cm.equals("")) {
-				// 查询人行存在评级信息
+			  log.info(cust_name+cert_type+cert_num);
+              try {
+            	// 查询人行存在评级信息
+            	BackCredit cm = creditRepository.getOptName(cust_name, cert_type, cert_num);	
 				um.setSerial_No(businessNo);
 				um.setCreated_time(new Date());
 				um.setCreator("admin");
@@ -217,11 +228,13 @@ public class CreditstartService {
 				um.setRATE_RECENTLY_OPENCARD_LIMIT(cm.getRate_recently_opencard_limit());
 				um.setRATE_REGISTER(cm.getRate_register());
 				bankCreditRepository.save(um);
-			} else {
-				// 不存在评级信息
-				// 发送韩迪http请求
-
-			}
+              }catch(NullPointerException e) {
+            	// 不存在评级信息
+  				// 发送韩迪http请求
+                  log.info("发送韩迪http请求.......");
+              }
+		
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} /*
@@ -231,5 +244,106 @@ public class CreditstartService {
 			 * e.printStackTrace(); } }
 			 */
 	}
+	/**
+	 * 回调反欺诈借口
+	 * @param businessNo
+	 * @param fraudScore
+	 */
+   public void fraudCallBack(String businessNo,String fraudScore) {
+	   CallBackUserCreditContentMode cum=new CallBackUserCreditContentMode();
+	   cum.setBusinessNo(businessNo);
+	   cum.setFraudScore(fraudScore);
+	   String json=JaxbUtil.toJSon(cum);
+	   log.info("回调反欺诈借口"+json);
+	   try {
+           //创建连接
+           URL url = new URL("http://172.16.112.180:9090/wmxtcms/callback/fraud.action");
+           HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+           connection.setDoOutput(true);
+           connection.setDoInput(true);
+           connection.setRequestMethod("POST");
+           connection.setUseCaches(false);
+           connection.setInstanceFollowRedirects(true);
+           connection.setRequestProperty("Content-Type","application/json");
+           connection.connect();
 
+           //POST请求
+           DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+           
+           String str = URLEncoder.encode(json, "utf-8");
+           out.writeBytes(str);
+           out.flush();
+           out.close();
+
+           //读取响应
+           BufferedReader reader = new BufferedReader(new InputStreamReader(
+                   connection.getInputStream()));
+           String lines;
+           StringBuffer sb = new StringBuffer("");
+           while ((lines = reader.readLine()) != null) {
+               lines = new String(lines.getBytes(), "utf-8");
+               sb.append(lines);
+           }
+           String sss = URLDecoder.decode(sb.toString(), "utf-8");
+           System.out.println(sss);
+           reader.close();
+           // 断开连接
+           connection.disconnect();
+       } catch (Exception e) {
+           e.printStackTrace();
+       }
+	   
+   }
+	/**
+	 * 回调征信接口
+	 * @param businessNo
+	 * @param customScore
+	 */
+ public void creditCallBack(String businessNo,String customScore) {
+	 CallBackCustomerScoreContentModel csm=new CallBackCustomerScoreContentModel();
+	 csm.setBusinessNo(businessNo);
+	 csm.setCustomScoree(customScore);
+	 String json=JaxbUtil.toJSon(csm);
+	 log.info("回调征信接口"+json);
+	 try {
+         //创建连接
+         URL url = new URL("http://172.16.112.180:9090/wmxtcms/callback/custom.action");
+         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+         connection.setDoOutput(true);
+         connection.setDoInput(true);
+         connection.setRequestMethod("POST");
+         connection.setUseCaches(false);
+         connection.setInstanceFollowRedirects(true);
+         connection.setRequestProperty("Content-Type","application/json");
+         connection.connect();
+
+         //POST请求
+         DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+         
+         String str = URLEncoder.encode(json, "utf-8");
+         out.writeBytes(str);
+         out.flush();
+         out.close();
+
+         //读取响应
+         BufferedReader reader = new BufferedReader(new InputStreamReader(
+                 connection.getInputStream()));
+         String lines;
+         StringBuffer sb = new StringBuffer("");
+         while ((lines = reader.readLine()) != null) {
+             lines = new String(lines.getBytes(), "utf-8");
+             sb.append(lines);
+         }
+         String sss = URLDecoder.decode(sb.toString(), "utf-8");
+         System.out.println(sss);
+         reader.close();
+         // 断开连接
+         connection.disconnect();
+     } catch (Exception e) {
+         e.printStackTrace();
+     }
+	   
+   }
+	
+	
 }

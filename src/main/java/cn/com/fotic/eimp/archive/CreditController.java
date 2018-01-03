@@ -93,16 +93,20 @@ public class CreditController {
 				// 01-反欺诈
 				log.info("调用反欺诈......");
 				// 1.生成xml
-			String xml = creditstartService.HdAntiFraudService(idNo, custName);
+			    String xml = creditstartService.HdAntiFraudService(idNo, custName);
 				log.info(xml);
 				// 2.进行数据加密,发送数据给韩迪
 				String HdReturn = creditstartService.checkRiskSystem(xml);
 				log.info(HdReturn);
-				/*if(HdReturn.equals(0000)||HdReturn=="0000") {
-					
+				if(HdReturn.equals("0000")||HdReturn=="0000") {
+					//韩迪返回查询成功信息
+					creditstartService.creditCallBack(businessNo, "1000");
 				}else {
-					
-				}*/
+					//韩迪返回查询错误信息
+					creditstartService.creditCallBack(businessNo, "1000");
+					log.info("查询反欺诈处理成功,业务流水号："+businessNo);
+				}
+				
 				rm.setReCode("01");
 				rm.setReDesc("成功");
 				return rm;

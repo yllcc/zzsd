@@ -69,7 +69,12 @@ public class JaxbUtil {
 		}
 		return t;
 	}
-	
+	/**
+	 * 把JavaBean转换为json字符串
+	 * 
+	 * @param object
+	 * @return
+	 */
 	public static String toJSon(Object object) {
 		
 		if (objectMapper == null) {
