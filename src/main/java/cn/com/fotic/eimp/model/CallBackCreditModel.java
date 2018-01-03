@@ -1,6 +1,9 @@
 package cn.com.fotic.eimp.model;
 
-public class CallBackCreditModel {
+import java.io.Serializable;
+
+public class CallBackCreditModel implements Serializable {
+	private static final long serialVersionUID = 2620024932905963095L;
 	private String  brNo;//合作机构号
 	private String  txCode; //接口编号
 	private String  reqDate;//请求日期

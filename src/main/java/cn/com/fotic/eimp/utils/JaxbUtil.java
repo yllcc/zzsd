@@ -6,12 +6,17 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Jaxb2工具类
  * 
  * @author liugj
  */
 public class JaxbUtil {
+	
+	public static ObjectMapper objectMapper;
+	
 	/**
 	 * JavaBean转换成xml 默认编码UTF-8
 	 * 
@@ -64,4 +69,44 @@ public class JaxbUtil {
 		}
 		return t;
 	}
+	
+	public static String toJSon(Object object) {
+		
+		if (objectMapper == null) {
+			objectMapper = new ObjectMapper();
+		}
+
+		try {
+			return objectMapper.writeValueAsString(object);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+	/**
+	 * 使用泛型方法，把json字符串转换为相应的JavaBean对象。
+	 * (1)转换为普通JavaBean：readValue(json,Student.class)
+	 * (2)转换为List,如List<Student>,将第二个参数传递为Student
+	 * [].class.然后使用Arrays.asList();方法把得到的数组转换为特定类型的List
+	 * 
+	 * @param jsonStr
+	 * @param valueType
+	 * @return
+	 */
+	public static <T> T readValue(String jsonStr, Class<T> valueType) {
+		if (objectMapper == null) {
+			objectMapper = new ObjectMapper();
+		}
+
+		try {
+			return objectMapper.readValue(jsonStr, valueType);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	
 }

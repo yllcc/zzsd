@@ -1,5 +1,7 @@
 package cn.com.fotic.eimp.model;
 
+import java.io.Serializable;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -8,9 +10,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "subatm")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class HdAntiFraudModel {
+public class HdAntiFraudModel implements Serializable {
+	private static final long serialVersionUID = 2690024932905963095L;
 	@XmlElement
-	private String Application;// 应用名称
+	private String application;// 应用名称
 	@XmlElement
 	private String version; // 通讯协议版本号
 	@XmlElement
@@ -49,11 +52,11 @@ public class HdAntiFraudModel {
 	private String imei;// 国际移动设备标志
 
 	public String getApplication() {
-		return Application;
+		return application;
 	}
 
 	public void setApplication(String application) {
-		Application = application;
+		this.application = application;
 	}
 
 	public String getVersion() {

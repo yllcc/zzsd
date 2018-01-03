@@ -1,121 +1,121 @@
 package cn.com.fotic.eimp.archive;
 
-import javax.jms.Queue;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.core.JmsMessagingTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import ch.qos.logback.classic.Logger;
 import cn.com.fotic.eimp.model.UserCreditModel;
 import cn.com.fotic.eimp.model.UserCreditReturnModel;
-import cn.com.fotic.eimp.utils.VerificationUtils;
+import cn.com.fotic.eimp.service.CreditstartService;
+import cn.com.fotic.eimp.utils.JaxbUtil;
 import lombok.extern.slf4j.Slf4j;
 
+
+/**
+ * 反欺诈接口
+ * @author liugj
+ *
+ */
+
+
+
+@Controller
+@Slf4j
 @RestController
 @RequestMapping("/")
 public class CreditController {
 
-	private VerificationUtils vt;
 
-	/*
-	 * @Autowired private JmsMessagingTemplate jmsMessagingTemplate;
-	 * 
-	 * @Autowired private StringRedisTemplate redisTemplate;
-	 * 
-	 * @Autowired private Queue archiveProcessQueue;
-	 * 
-	 * @Autowired private Queue archiveCallbackQueue;
-	 */
+	@Autowired
+	private StringRedisTemplate redisTemplate;
 
-	/*
-	 * @JmsListener(destination = "${queue.archiveBuffer.destination}", concurrency
-	 * = "${queue.archiveBuffer.concurrency}") public void
-	 * bufferQueueConsumer(String reqSerial) {
-	 * 
-	 * String content = redisTemplate.opsForValue().get(reqSerial);
-	 * 
-	 * log.info(reqSerial+":"+content+"开始处理");
-	 * 
-	 * redisTemplate.opsForValue().set("10000002","测试2");
-	 * jmsMessagingTemplate.convertAndSend(archiveProcessQueue, "10000002");
-	 * 
-	 * redisTemplate.delete(reqSerial); log.info(reqSerial+"处理完成，已从redis队列删除"); }
-	 * 
-	 * @JmsListener(destination = "${queue.archiveProcess.destination}", concurrency
-	 * = "${queue.archiveProcess.concurrency}") public void
-	 * processQueueConsumer(String reqSerial) {
-	 * 
-	 * String content = redisTemplate.opsForValue().get(reqSerial);
-	 * 
-	 * log.info(reqSerial+":"+content+"开始处理");
-	 * 
-	 * redisTemplate.opsForValue().set("10000003","测试3");
-	 * jmsMessagingTemplate.convertAndSend(archiveCallbackQueue, "10000003");
-	 * 
-	 * redisTemplate.delete(reqSerial); log.info(reqSerial+"处理完成，已从redis队列删除");
-	 * 
-	 * }
-	 * 
-	 * @JmsListener(destination = "${queue.archiveCallback.destination}",
-	 * concurrency = "${queue.archiveCallback.concurrency}") public void
-	 * callbackQueueConsumer(String reqSerial) {
-	 * 
-	 * String content = redisTemplate.opsForValue().get(reqSerial);
-	 * 
-	 * //log.info(reqSerial+":"+content+"开始处理");
-	 * 
-	 * redisTemplate.delete(reqSerial); log.info(reqSerial+"处理完成，已从redis队列删除"); }
-	 */
-	@RequestMapping(value = "/creditstart")
-	public UserCreditReturnModel callcredit(UserCreditModel user) {
-		UserCreditReturnModel rm = new UserCreditReturnModel();
-		// 信贷业务号
-		String appId = user.getAppId();
-		// 01-反欺诈02-征信
-		String callType = user.getCallType();
+
+	@Autowired
+	private CreditstartService creditstartService;
+	
+	@JmsListener(destination = "${queue.archiveBuffer.destination}", concurrency = "${queue.archiveBuffer.concurrency}")
+	public void bufferQueueConsumer(String reqSerial) {
+
+		String json = redisTemplate.opsForValue().get(reqSerial);
+		log.info(reqSerial + ":" + json);
+		UserCreditModel user = JaxbUtil.readValue(json, UserCreditModel.class);
+		String businessNo = user.getContent().getBusinessNo();
+		String token = user.getToken();
 		// 证件类型
-		String idType = user.getIdType();
+		String idType = user.getContent().getIdType();
 		// 证件号码
-		String idNo = user.getIdNo();
+		String idNo = user.getContent().getIdNo();
 		// 客户名称
-		String custName = user.getCustName();
-		boolean name = vt.nameValidate(custName);
-		if (name == true) {
-			boolean idTypeAndIdNo = vt.cardNocheck(idType, idNo);
-			if (idTypeAndIdNo == true && name == true) {
-				if (callType == "01") {
-					// 01-反欺诈
-				} else if (callType == "01") {
-					// 02-征信
-				} else {
-					// 其他类型
-				}
+		String custName = user.getContent().getCustName();		
+		
+         
+		
+		
+	}
+
+
+	@JmsListener(destination = "${queue.archiveCallback.destination}", concurrency = "${queue.archiveCallback.concurrency}")
+	public void callbackQueueConsumer(String reqSerial) {
+
+		String content = redisTemplate.opsForValue().get(reqSerial);
+
+		log.info(reqSerial + ":" + content + "003结束开始处理");
+
+		redisTemplate.delete(reqSerial);
+		log.info(reqSerial + "003结束处理完成，已从redis队列删除");
+	}
+
+	@RequestMapping(value = "/independentAudit", method = RequestMethod.POST, produces = { MediaType.APPLICATION_JSON_VALUE })
+	@ResponseBody
+	public UserCreditReturnModel independentAudit(@RequestBody UserCreditModel user) throws Exception {
+		log.info("start....");
+		UserCreditReturnModel rm = new UserCreditReturnModel();
+		// UserCreditModel userModel=new UserCreditModel();
+		// for(UserCreditModel user:userList){
+		// 信贷业务号
+		String businessNo = user.getContent().getBusinessNo();
+		// 证件类型
+		String idType = user.getContent().getIdType();
+		// 证件号码
+		String idNo = user.getContent().getIdNo();
+		// 客户名称
+		String token = user.getToken();
+		// 客户名称
+		String custName = user.getContent().getCustName();
+		boolean verification = creditstartService.VerificationService(custName, idNo, idType);
+		if (verification == true) {
+				// 01-反欺诈
+				log.info("调用反欺诈......");
+				// 1.生成xml
+			String xml = creditstartService.HdAntiFraudService(idNo, custName);
+				log.info(xml);
+				// 2.进行数据加密,发送数据给韩迪
+				String HdReturn = creditstartService.checkRiskSystem(xml);
+				log.info(HdReturn);
+				/*if(HdReturn.equals(0000)||HdReturn=="0000") {
+					
+				}else {
+					
+				}*/
 				rm.setReCode("01");
 				rm.setReDesc("成功");
 				return rm;
-
-			} else {
-				rm.setReCode("02");
-				rm.setReDesc("失败");
-				rm.setErrorcode("001");
-				rm.setErrormsg("证件号或证件类型验证失败");
-				return rm;
-			}
 		} else {
 			rm.setReCode("02");
 			rm.setReDesc("失败");
 			rm.setErrorcode("001");
-			rm.setErrormsg("证件号或证件类型验证失败");
+			rm.setErrormsg("证件号或证件类型校验失败");
 			return rm;
 		}
-
+		
+		// }
+		// return rm;
 	}
 
 }
-	

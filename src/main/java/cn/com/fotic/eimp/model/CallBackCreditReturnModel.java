@@ -1,6 +1,9 @@
 package cn.com.fotic.eimp.model;
 
-public class CallBackCreditReturnModel {
+import java.io.Serializable;
+
+public class CallBackCreditReturnModel implements Serializable {
+	private static final long serialVersionUID = 2620024932901233095L;
 	private String respCode; //响应码
 	private String  respDesc; //响应描述
 	private String  content;//响应内容

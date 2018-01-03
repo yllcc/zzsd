@@ -1,48 +1,48 @@
 package cn.com.fotic.eimp.model;
 
-public class UserCreditModel {
-	private String  appId;
-	private String callType;
-	private String idType;
-	private String idNo;
-	private String custName;
-	private String phoneNo;
-	public String getAppId() {
-		return appId;
+import java.io.Serializable;
+/**
+ * 信贷调用反欺诈 model
+ * 
+ * @author liugj
+ *
+ */
+public class UserCreditModel implements Serializable {
+	private static final long serialVersionUID = 1221024932905963095L;
+	private String  txTime;
+	private String serialNo;
+	private String platformNo;
+	private String  token; //口令
+	private UserCreditContentModel content;
+	public String getTxTime() {
+		return txTime;
 	}
-	public void setAppId(String appId) {
-		this.appId = appId;
+	public void setTxTime(String txTime) {
+		this.txTime = txTime;
 	}
-	public String getCallType() {
-		return callType;
+	public String getSerialNo() {
+		return serialNo;
 	}
-	public void setCallType(String callType) {
-		this.callType = callType;
+	public void setSerialNo(String serialNo) {
+		this.serialNo = serialNo;
 	}
-	public String getIdType() {
-		return idType;
+	public String getPlatformNo() {
+		return platformNo;
 	}
-	public void setIdType(String idType) {
-		this.idType = idType;
+	public void setPlatformNo(String platformNo) {
+		this.platformNo = platformNo;
 	}
-	public String getIdNo() {
-		return idNo;
+	public String getToken() {
+		return token;
 	}
-	public void setIdNo(String idNo) {
-		this.idNo = idNo;
+	public void setToken(String token) {
+		this.token = token;
 	}
-	public String getCustName() {
-		return custName;
+	public UserCreditContentModel getContent() {
+		return content;
 	}
-	public void setCustName(String custName) {
-		this.custName = custName;
+	public void setContent(UserCreditContentModel content) {
+		this.content = content;
 	}
-	public String getPhoneNo() {
-		return phoneNo;
-	}
-	public void setPhoneNo(String phoneNo) {
-		this.phoneNo = phoneNo;
-	}
-	
-
+    
 }
