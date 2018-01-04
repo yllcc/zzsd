@@ -2,13 +2,13 @@ package cn.com.fotic.eimp.model;
 
 import java.io.Serializable;
 
-public class CallBackUserCreditMode implements Serializable {
+public class CallBackUserCreditModel implements Serializable {
 	private static final long serialVersionUID = 2620024932905963095L;
 	private String  txTime;//合作机构号
 	private String  serialNo; //接口编号
 	private String  platformNo;//请求日期
 	private String  token; //口令
-	private CallBackUserCreditContentMode  content;//请求内容
+	private CallBackUserCreditContentModel  content;//请求内容
 	public String getTxTime() {
 		return txTime;
 	}
@@ -33,10 +33,10 @@ public class CallBackUserCreditMode implements Serializable {
 	public void setToken(String token) {
 		this.token = token;
 	}
-	public CallBackUserCreditContentMode getContent() {
+	public CallBackUserCreditContentModel getContent() {
 		return content;
 	}
-	public void setContent(CallBackUserCreditContentMode content) {
+	public void setContent(CallBackUserCreditContentModel content) {
 		this.content = content;
 	}
 	

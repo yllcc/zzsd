@@ -7,26 +7,22 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
 import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
-import cn.com.fotic.eimp.model.CallBackUserCreditContentMode;
+import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
+import cn.com.fotic.eimp.model.CallBackUserCreditContentModel;
+import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.repository.BankCreditRepository;
 import cn.com.fotic.eimp.repository.CreditRepository;
@@ -48,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
-public class CreditstartService {
+public class CreditService {
 
 	private VerificationUtils vt;
 
@@ -82,13 +78,13 @@ public class CreditstartService {
 	}
 
 	/**
-	 * 调用翰迪接口，反欺诈 1.生成xml
+	 * 调用翰迪接口，征信 1.生成xml
 	 * 
 	 * @param idNo
 	 * @param custName
 	 * @return
 	 */
-	public String HdAntiFraudService(String idNo, String custName) {
+	public String HdCreditService(String idNo, String custName) {
 		HdAntiFraudModel hd = new HdAntiFraudModel();
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
@@ -109,16 +105,16 @@ public class CreditstartService {
 		hd.setAddress("");
 		hd.setAddress("");
 		hd.setBankCard("");
-		hd.setProductItemCode("100102,100103");
+		hd.setProductItemCode("100102");
 		hd.setWifiMac("");
 		hd.setMac("");
 		String xmlReq = JaxbUtil.convertToXml(hd);
 		return xmlReq;
 
 	}
-
 	/**
-	 * 调用翰迪接口，反欺诈 2.加密请求数据
+	 * 调用翰迪接口 
+	 * 加密请求数据
 	 * 
 	 * @return
 	 * @throws Exception
@@ -139,19 +135,11 @@ public class CreditstartService {
 				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
 
 		String returnXml = new String(Base64Utils.encode(channelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
-		log.info(returnXml);
-
-		long start = System.currentTimeMillis();
-		log.info("T1=" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(new Date()));
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
-		log.info("T2=" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(new Date()) + ",time length:"
-				+ (System.currentTimeMillis() - start));
-		log.info("韩迪返回的数据：" + reutrnResult);
 		String xmlArr[] = reutrnResult.split("\\|");
 
 		if (xmlArr[0].equals("0")) {
 			String err = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
-			log.info("韩迪返回的:" + new String(Base64Utils.decode(xmlArr[2]), "utf-8"));
 			return err;
 		} else {
 			byte[] b = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
@@ -190,21 +178,11 @@ public class CreditstartService {
 	 * @param cert_type
 	 * @param cert_num
 	 */
-	public void creditOracle(String businessNo, String cust_name, String cert_type, String cert_num) {
-		/*
-		 * Connection con = null;// 创建一个数据库连接 PreparedStatement pre = null;//
-		 * 创建预编译语句对象，一般都是用这个而不用Statement ResultSet result = null;// 创建一个结果集对象
-		 */ 
+	public boolean creditOracle(String token,String businessNo, String cust_name, String cert_type, String cert_num) {
+	 
 		 BankCredit um = new BankCredit();
-		try {
-			/*
-			 * Class.forName("oracle.jdbc.driver.OracleDriver");// 加载Oracle驱动程序
-			 * 
-			 * String url = "jdbc:oracle:" + "thin:@10.7.101.39:1521/orcl";//
-			 * 127.0.0.1是本机地址，XE是精简版Oracle的默认数据库名 String user = "wmxt_hd";// 用户名,系统默认的账户名
-			 * String password = "wmxt_hd";// 你安装时选设置的密码 con =
-			 * DriverManager.getConnection(url, user, password);// 获取连接 log.info("连接成功！");
-			 */
+		 try {
+		
 			  log.info(cust_name+cert_type+cert_num);
               try {
             	// 查询人行存在评级信息
@@ -229,82 +207,48 @@ public class CreditstartService {
 				um.setRATE_REGISTER(cm.getRate_register());
 				bankCreditRepository.save(um);
               }catch(NullPointerException e) {
-            	// 不存在评级信息
-  				// 发送韩迪http请求
-                  log.info("发送韩迪http请求.......");
+            	    // 不存在评级信息
+  				    // 发送翰迪http请求
+                    log.info("发送翰迪http请求.......");
+                    String xml=this.HdCreditService(cert_num, cust_name);
+          			String HdReturn = this.checkRiskSystem(xml);
+          			if(HdReturn.equals("0000")||HdReturn=="0000") {
+          				//翰迪返回查询成功信息
+          				this.creditCallBack(token,businessNo, "1000");
+          				log.info("查询翰迪成功,业务流水号："+businessNo);
+          			}else {
+          				//翰迪返回查询错误信息
+          				this.creditCallBack(token,businessNo, "660");
+          			    log.info("查询翰迪处理失败,业务流水号："+businessNo+",翰迪返回失败原因："+HdReturn);
+          			}
               }
-		
-			
 		} catch (Exception e) {
 			e.printStackTrace();
-		} /*
-			 * finally { try{ // 逐一将上面的几个对象关闭，因为不关闭的话会影响性能、并且占用资源 // 注意关闭的顺序，最后使用的最先关闭 if
-			 * (result != null) result.close(); if (pre != null) pre.close(); if (con !=
-			 * null) con.close(); log.info("数据库连接已关闭！"); }catch (Exception e){
-			 * e.printStackTrace(); } }
-			 */
+		}
+		return false;
 	}
-	/**
-	 * 回调反欺诈借口
-	 * @param businessNo
-	 * @param fraudScore
-	 */
-   public void fraudCallBack(String businessNo,String fraudScore) {
-	   CallBackUserCreditContentMode cum=new CallBackUserCreditContentMode();
-	   cum.setBusinessNo(businessNo);
-	   cum.setFraudScore(fraudScore);
-	   String json=JaxbUtil.toJSon(cum);
-	   log.info("回调反欺诈借口"+json);
-	   try {
-           //创建连接
-           URL url = new URL("http://172.16.112.180:9090/wmxtcms/callback/fraud.action");
-           HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-           connection.setDoOutput(true);
-           connection.setDoInput(true);
-           connection.setRequestMethod("POST");
-           connection.setUseCaches(false);
-           connection.setInstanceFollowRedirects(true);
-           connection.setRequestProperty("Content-Type","application/json");
-           connection.connect();
-
-           //POST请求
-           DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-           
-           String str = URLEncoder.encode(json, "utf-8");
-           out.writeBytes(str);
-           out.flush();
-           out.close();
-
-           //读取响应
-           BufferedReader reader = new BufferedReader(new InputStreamReader(
-                   connection.getInputStream()));
-           String lines;
-           StringBuffer sb = new StringBuffer("");
-           while ((lines = reader.readLine()) != null) {
-               lines = new String(lines.getBytes(), "utf-8");
-               sb.append(lines);
-           }
-           String sss = URLDecoder.decode(sb.toString(), "utf-8");
-           System.out.println(sss);
-           reader.close();
-           // 断开连接
-           connection.disconnect();
-       } catch (Exception e) {
-           e.printStackTrace();
-       }
-	   
-   }
 	/**
 	 * 回调征信接口
 	 * @param businessNo
 	 * @param customScore
 	 */
- public void creditCallBack(String businessNo,String customScore) {
+ public void creditCallBack(String token,String businessNo,String customScore) {
+	 CallBackCustomerScoreModel cm=new CallBackCustomerScoreModel();
 	 CallBackCustomerScoreContentModel csm=new CallBackCustomerScoreContentModel();
+	 SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
+	 String sendTime = df.format(new Date());// new Date()为获取当前系统时间
 	 csm.setBusinessNo(businessNo);
 	 csm.setCustomScoree(customScore);
-	 String json=JaxbUtil.toJSon(csm);
-	 log.info("回调征信接口"+json);
+	 cm.setContent(csm);
+	 cm.setPlatformNo("1234");
+	 cm.setSerialNo(businessNo);
+	 cm.setToken(token);
+	 cm.setTxTime(sendTime);
+	 
+
+	 
+	 String json=JaxbUtil.toJSon(cm);
+	 log.info("回调征信接口:"+json);
 	 try {
          //创建连接
          URL url = new URL("http://172.16.112.180:9090/wmxtcms/callback/custom.action");

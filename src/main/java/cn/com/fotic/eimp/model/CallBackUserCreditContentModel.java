@@ -2,7 +2,7 @@ package cn.com.fotic.eimp.model;
 
 import java.io.Serializable;
 
-public class CallBackUserCreditContentMode implements Serializable {
+public class CallBackUserCreditContentModel implements Serializable {
 	private static final long serialVersionUID = 2620024932905963095L;
 	private String  businessNo;//平台流水号
 	private String  fraudScore; //反欺诈评分

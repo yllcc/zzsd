@@ -1,9 +1,16 @@
 package cn.com.fotic.eimp.archive;
 
+import java.io.IOException;
+import java.net.URLDecoder;
+
+import javax.jms.Queue;
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +19,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import cn.com.fotic.eimp.model.UserCreditModel;
 import cn.com.fotic.eimp.model.UserCreditReturnModel;
-import cn.com.fotic.eimp.service.CreditstartService;
+import cn.com.fotic.eimp.service.CreditService;
+import cn.com.fotic.eimp.service.FraudService;
 import cn.com.fotic.eimp.utils.JaxbUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,15 +37,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping("/")
-public class CreditController {
+public class FraudController {
 
+	@Autowired
+	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	@Autowired
 	private StringRedisTemplate redisTemplate;
 
-
 	@Autowired
-	private CreditstartService creditstartService;
+	private Queue archiveBufferQueue;
+	
+	@Autowired
+	private CreditService creditService;
+	
+	@Autowired
+	private FraudService fraudService;
 	
 	@JmsListener(destination = "${queue.archiveBuffer.destination}", concurrency = "${queue.archiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String reqSerial) {
@@ -52,9 +67,26 @@ public class CreditController {
 		// 证件号码
 		String idNo = user.getContent().getIdNo();
 		// 客户名称
-		String custName = user.getContent().getCustName();		
-		
-         
+		String custName = user.getContent().getCustName();				
+		// 1.生成xml
+	    String xml = fraudService.HdFraudService(idNo, custName);
+		log.info(xml);
+		// 2.进行数据加密,发送数据给韩迪		
+		try {
+			String HdReturn = creditService.checkRiskSystem(xml);
+			if(HdReturn.equals("0000")||HdReturn=="0000") {
+				//韩迪返回查询成功信息
+				fraudService.fraudCallBack(token,businessNo, "1000");
+				log.info("查询反欺诈处理成功,业务流水号："+businessNo);
+			}else {
+				//韩迪返回查询错误信息
+				fraudService.fraudCallBack(token,businessNo, "00");
+			    log.info("查询反欺诈处理失败,业务流水号："+businessNo+",韩迪返回失败原因："+HdReturn);
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		
 	}
@@ -71,9 +103,26 @@ public class CreditController {
 		log.info(reqSerial + "003结束处理完成，已从redis队列删除");
 	}
 
-	@RequestMapping(value = "/independentAudit", method = RequestMethod.POST, produces = { MediaType.APPLICATION_JSON_VALUE })
-	@ResponseBody
-	public UserCreditReturnModel independentAudit(@RequestBody UserCreditModel user) throws Exception {
+	@RequestMapping(value = "/independentAudit")
+	private UserCreditReturnModel independentAudit(HttpServletRequest request) throws IOException  {
+        int contentLength = request.getContentLength();
+         if(contentLength<0){
+           return null;
+        }
+         byte buffer[] = new byte[contentLength];
+         for (int i = 0; i < contentLength;) {
+             int len = request.getInputStream().read(buffer, i, contentLength - i);
+           if (len == -1) {
+               break;
+            }
+            i += len;
+        }    
+         String a=new String(buffer, "utf-8");
+         log.info(a);
+         String b= URLDecoder.decode(a.toString(), "utf-8");;
+         log.info(b);
+         
+     UserCreditModel user = JaxbUtil.readValue(b, UserCreditModel.class);  
 		log.info("start....");
 		UserCreditReturnModel rm = new UserCreditReturnModel();
 		// UserCreditModel userModel=new UserCreditModel();
@@ -88,24 +137,11 @@ public class CreditController {
 		String token = user.getToken();
 		// 客户名称
 		String custName = user.getContent().getCustName();
-		boolean verification = creditstartService.VerificationService(custName, idNo, idType);
+		boolean verification = creditService.VerificationService(custName, idNo, idType);
 		if (verification == true) {
-				// 01-反欺诈
-				log.info("调用反欺诈......");
-				// 1.生成xml
-			    String xml = creditstartService.HdAntiFraudService(idNo, custName);
-				log.info(xml);
-				// 2.进行数据加密,发送数据给韩迪
-				String HdReturn = creditstartService.checkRiskSystem(xml);
-				log.info(HdReturn);
-				if(HdReturn.equals("0000")||HdReturn=="0000") {
-					//韩迪返回查询成功信息
-					creditstartService.creditCallBack(businessNo, "1000");
-				}else {
-					//韩迪返回查询错误信息
-					creditstartService.creditCallBack(businessNo, "1000");
-					log.info("查询反欺诈处理成功,业务流水号："+businessNo);
-				}
+			String json = JaxbUtil.toJSon(user);
+			redisTemplate.opsForValue().set(businessNo, json);
+			jmsMessagingTemplate.convertAndSend(archiveBufferQueue,businessNo);	
 				
 				rm.setReCode("01");
 				rm.setReDesc("成功");
