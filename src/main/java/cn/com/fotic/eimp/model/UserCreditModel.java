@@ -1,6 +1,7 @@
 package cn.com.fotic.eimp.model;
 
 import java.io.Serializable;
+import java.util.List;
 /**
  * 信贷调用反欺诈 model
  * 
@@ -13,7 +14,7 @@ public class UserCreditModel implements Serializable {
 	private String serialNo;
 	private String platformNo;
 	private String  token; //口令
-	private UserCreditContentModel content;
+	private List<UserCreditContentModel> content;
 	public String getTxTime() {
 		return txTime;
 	}
@@ -38,11 +39,12 @@ public class UserCreditModel implements Serializable {
 	public void setToken(String token) {
 		this.token = token;
 	}
-	public UserCreditContentModel getContent() {
+	public List<UserCreditContentModel> getContent() {
 		return content;
 	}
-	public void setContent(UserCreditContentModel content) {
+	public void setContent(List<UserCreditContentModel> content) {
 		this.content = content;
 	}
+
     
 }
