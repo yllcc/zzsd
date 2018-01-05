@@ -8,33 +8,18 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.UUID;
+import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
 
-import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
-import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
 import cn.com.fotic.eimp.model.CallBackUserCreditContentModel;
 import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
-import cn.com.fotic.eimp.repository.BankCreditRepository;
-import cn.com.fotic.eimp.repository.CreditRepository;
-import cn.com.fotic.eimp.repository.entity.BackCredit;
-import cn.com.fotic.eimp.repository.entity.BankCredit;
-import cn.com.fotic.eimp.utils.Base64Utils;
-import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
-import cn.com.fotic.eimp.utils.Md5Utils;
-import cn.com.fotic.eimp.utils.RSAUtils;
-import cn.com.fotic.eimp.utils.ThreeDESUtils;
-import cn.com.fotic.eimp.utils.VerificationUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,7 +58,7 @@ public class FraudService {
 		hd.setAddress("");
 		hd.setAddress("");
 		hd.setBankCard("");
-		hd.setProductItemCode("100108");
+		hd.setProductItemCode("100102");
 		hd.setWifiMac("");
 		hd.setMac("");
 		String xmlReq = JaxbUtil.convertToXml(hd);
@@ -86,19 +71,23 @@ public class FraudService {
 	 * @param businessNo
 	 * @param fraudScore
 	 */
-   public void fraudCallBack(String token,String businessNo,String fraudScore) {
-	   CallBackUserCreditModel cum=new CallBackUserCreditModel();
-	   CallBackUserCreditContentModel cm=new CallBackUserCreditContentModel();
+   public void fraudCallBack(String token,String businessNo,String fraudScore,String custName) {
+	   CallBackUserCreditModel cm=new CallBackUserCreditModel();
+		List<CallBackUserCreditContentModel> csm = new ArrayList<CallBackUserCreditContentModel>();
 	   SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
-	   cm.setBusinessNo(businessNo);
-	   cm.setFraudScore(fraudScore);
-	   cum.setContent(cm);
-	   cum.setPlatformNo("0002");
-	   cum.setSerialNo(businessNo);
-	   cum.setToken(token);
-	   cum.setTxTime(sendTime);
-	   String json=JaxbUtil.toJSon(cum);
+		CallBackUserCreditContentModel a=new CallBackUserCreditContentModel();
+		a.setBusinessNo(businessNo);
+		a.setFraudScore(fraudScore);
+		csm.add(a);
+		cm.setContent(csm);
+        cm.setContent(csm);
+		cm.setPlatformNo(custName);
+		cm.setSerialNo(businessNo);
+		cm.setToken(token);
+		cm.setTxTime(sendTime);
+
+	   String json = JSON.toJSONString(cm);
 	   log.info("回调反欺诈接口"+json);
 	   try {
            //创建连接
@@ -140,6 +129,4 @@ public class FraudService {
 	   
    }
 
-	
-	
 }

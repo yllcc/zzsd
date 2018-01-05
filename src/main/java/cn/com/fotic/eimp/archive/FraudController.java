@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
+import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.JSON_TYPE;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
@@ -51,6 +52,12 @@ public class FraudController {
 	private Queue archiveBufferQueue;
 
 	@Autowired
+	private Queue archiveProcessQueue;
+
+	@Autowired
+	private Queue archiveCallbackQueue;
+
+	@Autowired
 	private CreditService creditService;
 
 	@Autowired
@@ -60,46 +67,73 @@ public class FraudController {
 	public void bufferQueueConsumer(String reqSerial) {
 
 		String json = redisTemplate.opsForValue().get(reqSerial);
-		log.info(reqSerial + ":" + json);
-		UserCreditQueneModel user = JaxbUtil.readValue(json, UserCreditQueneModel.class);
-
-		String businessNo = user.getBusinessNo();
-		// 证件号码
-		String idNo = user.getIdNo();
-		// 客户名称
-		String custName = user.getCustName();
-		String token = user.getToken();
-		// 1.生成xml
-		String xml = fraudService.HdFraudService(idNo, custName);
-		log.info(xml);
-		// 2.进行数据加密,发送数据给韩迪
-		try {
-			String HdReturn = creditService.checkRiskSystem(xml);
-			if (HdReturn.equals("0000") || HdReturn == "0000") {
-				// 韩迪返回查询成功信息
-				fraudService.fraudCallBack(token, businessNo, "1000");
-				log.info("查询反欺诈处理成功,业务流水号：" + businessNo);
-			} else {
-				// 韩迪返回查询错误信息
-				fraudService.fraudCallBack(token, businessNo, "00");
-				log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + HdReturn);
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+		log.info("流水号:"+reqSerial + "JSON数据:" + json);
+		
+		redisTemplate.opsForValue().set(reqSerial,json);
+		jmsMessagingTemplate.convertAndSend(archiveProcessQueue,reqSerial);
 	}
 
+	@JmsListener(destination = "${queue.archiveProcess.destination}", concurrency = "${queue.archiveProcess.concurrency}")
+	public void processQueueConsumer(String reqSerial) {
+		String json = redisTemplate.opsForValue().get(reqSerial);
+		log.info("22流水号:"+reqSerial + "22-----JSON数据:" + json);
+		
+		JSONObject jsonObject = JSON.parseObject(json);
+		String token = jsonObject.getString("token");
+		String serialNo=jsonObject.getString("serialNo");
+		// 判断是否存在content
+		if (jsonObject.containsKey("content")) {
+			String value = jsonObject.getString("content");
+			log.info(value);
+			JSON_TYPE jsonType = JsonTypeUtil.getJsonType(value);
+			// 判断是否为content数组
+			if (JSON_TYPE.JSON_TYPE_ARRAY.equals(jsonType)) {						
+	         List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
+				for (UserCreditContentModel user : contentList) {
+					String businessNo = user.getBusinessNo();
+					String idNo = user.getIdNo();					
+					String custName = user.getCustName();
+					// 1.生成xml
+					String xml = fraudService.HdFraudService(idNo, custName);
+					log.info(xml);
+					// 2.进行数据加密,发送数据给韩迪
+					try {
+						HdCreditReturnModel r = creditService.checkRiskSystem(xml);
+						/**
+						 * 有问题需要改，
+						 */
+						
+						
+						if (r.getResCode().equals("0000") ) {
+							// 韩迪返回查询成功信息
+							fraudService.fraudCallBack(token, businessNo, r.getData().get(0).getScore(),custName);
+							log.info("查询反欺诈处理成功,业务流水号：" + businessNo);
+						} else {
+							// 韩迪返回查询错误信息
+							fraudService.fraudCallBack(token, businessNo, "00",custName);
+							log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode()+r.getResMsg());
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					redisTemplate.opsForValue().set(businessNo, json);
+					jmsMessagingTemplate.convertAndSend(archiveCallbackQueue, businessNo);
+					redisTemplate.delete(reqSerial);
+					log.info(reqSerial + "处理完成，已从redis队列删除");
+				}	
+		}
+				}else {
+					//TODO
+				}
+	
+	}
 	@JmsListener(destination = "${queue.archiveCallback.destination}", concurrency = "${queue.archiveCallback.concurrency}")
 	public void callbackQueueConsumer(String reqSerial) {
-
 		String content = redisTemplate.opsForValue().get(reqSerial);
-
-		log.info(reqSerial + ":" + content + "003结束开始处理");
-
+		log.info(reqSerial + ":" + content + "结束开始处理");
 		redisTemplate.delete(reqSerial);
-		log.info(reqSerial + "003结束处理完成，已从redis队列删除");
+		log.info(reqSerial + "结束处理完成，已从redis队列删除");
 	}
 
 	@RequestMapping(value = "/independentAudit")
@@ -107,7 +141,7 @@ public class FraudController {
 		UserCreditReturnModel um = new UserCreditReturnModel();
 		int contentLength = request.getContentLength();
 		if (contentLength < 0) {
-			return null;
+			return null;//TODO
 		}
 		byte buffer[] = new byte[contentLength];
 		for (int i = 0; i < contentLength;) {
@@ -123,6 +157,7 @@ public class FraudController {
 
 		JSONObject jsonObject = JSON.parseObject(b);
 		String token = jsonObject.getString("token");
+		String serialNo=jsonObject.getString("serialNo");
 		// 判断是否存在content
 		if (jsonObject.containsKey("content")) {
 			String value = jsonObject.getString("content");
@@ -131,37 +166,28 @@ public class FraudController {
 			if (JSON_TYPE.JSON_TYPE_ARRAY.equals(jsonType)) {
 				List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
 				for (UserCreditContentModel user : contentList) {
-					// 信贷业务号
 					String businessNo = user.getBusinessNo();
-					// 证件类型
 					String idType = user.getIdType();
-					// 证件号码
 					String idNo = user.getIdNo();
-					// 客户名称
 					String custName = user.getCustName();
 					boolean verification = creditService.VerificationService(custName, idNo, idType);
 					if (verification == true) {
-						log.info("调用征信......");
-						log.info(businessNo + ":开始处理");
-						UserCreditQueneModel userQuene = new UserCreditQueneModel();
-						userQuene.setBusinessNo(businessNo);
-						userQuene.setCustName(custName);
-						userQuene.setIdNo(idNo);
-						userQuene.setIdType(idType);
-						userQuene.setToken(token);
-						String jsonUser = JaxbUtil.toJSon(userQuene);
-						redisTemplate.opsForValue().set(businessNo, jsonUser);
-						jmsMessagingTemplate.convertAndSend(archiveBufferQueue, businessNo);
+						log.info("调用反欺诈......"+businessNo + ":开始处理");
+						redisTemplate.opsForValue().set(serialNo, b);
+						jmsMessagingTemplate.convertAndSend(archiveBufferQueue, serialNo);
 						um.setReCode("01");
 						um.setReDesc("成功");
 						return um;
 					} else {
-						um.setErrorcode("001");
-						um.setErrormsg("证件号或证件类型校验失败");
+						um.setReCode("02");
+						um.setReDesc("证件号或证件类型校验失败");
 						return um;
 					}
 				}
-				log.info("数组" + contentList);
+			}else {
+				um.setReCode("03");
+				um.setReDesc("上送的格式不对，不是一个数组");
+				return um;
 			}
 		}
 		return um;

@@ -1,6 +1,7 @@
 package cn.com.fotic.eimp.model;
 
 import java.io.Serializable;
+import java.util.List;
 /**
  * 信贷调用评分model content
  * @author liugj
@@ -13,7 +14,7 @@ public class CallBackCustomerScoreModel implements Serializable {
 	private String  serialNo; //请求流水号
 	private String  platformNo;//平台编码
 	private String  token; //口令
-	private CallBackCustomerScoreContentModel  content;//请求内容
+	private List<CallBackCustomerScoreContentModel>  content;//请求内容
 	public String getTxTime() {
 		return txTime;
 	}
@@ -38,10 +39,10 @@ public class CallBackCustomerScoreModel implements Serializable {
 	public void setToken(String token) {
 		this.token = token;
 	}
-	public CallBackCustomerScoreContentModel getContent() {
+	public List<CallBackCustomerScoreContentModel> getContent() {
 		return content;
 	}
-	public void setContent(CallBackCustomerScoreContentModel content) {
+	public void setContent(List<CallBackCustomerScoreContentModel> content) {
 		this.content = content;
 	}
 	

@@ -49,7 +49,7 @@ public class CreditPersonalService {
 		requestModel.setSendTime(sendTime);
 		requestModel.setTransCode(transCode);
 		requestModel.setChannelId("11111100011");
-		requestModel.setChannelOrderId("100001120501");
+		requestModel.setChannelOrderId(sendTime);
 		requestModel.setName(model.getCustName());
 		requestModel.setCid(model.getIdNo());
 		requestModel.setMobile(model.getPhoneNo());

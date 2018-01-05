@@ -19,7 +19,4 @@ public class CallBackUserCreditContentModel implements Serializable {
 		this.fraudScore = fraudScore;
 	}
 
-
-	
-
 }
