@@ -230,62 +230,57 @@ public class CreditService {
 	 * @param cert_num
 	 * @throws Exception
 	 */
-	public  BackCredit creditOracle(String token, String businessNo, String cust_name, String cert_type,
+	public  BankCredit creditOracle(String token, String businessNo, String cust_name, String cert_type,
 			String cert_num, String phoneNo) throws Exception {
 	    	HdCreditReturnModel hcm = new HdCreditReturnModel();
 		   
 	     	// 查询人行存在评级信息
 	    	BackCredit cm = creditRepository.getOptName(cust_name, cert_type, cert_num);
-	
-		return cm;
+	    	BankCredit um = new BankCredit();
+	    	if (cm == null) {
+	    		return null;
+	    	}else {
+			um.setSerial_No(businessNo);
+			um.setCreated_time(new Date());
+			um.setCreator("admin");
+			um.setCert_num(cert_num);
+			um.setCert_type(cert_type);
+			um.setCust_name(cust_name);
+			um.setRATE_CREDIT_ACCOUNT_COUNT(cm.getRate_credit_account_count());
+			um.setRATE_CREDITCARD_APPROVAL_COUNT(cm.getRate_creditcard_approval_count());
+			um.setRATE_CREDITREPOR_COUNT(cm.getRate_creditrepor_count());
+			um.setRATE_EDU_LEVEL(cm.getRate_edu_level());
+			um.setRATE_FIRSTNOACCOUNT_CARDAGE(cm.getRate_firstnoaccount_cardage());
+			um.setRATE_FIVEYEAR_MAXOVERDUE_COUNT(cm.getRate_fiveyear_maxoverdue_count());
+			um.setRATE_LOANOFF_LOANOPEN_RATIO(cm.getRate_loanoff_loanopen_ratio());
+			um.setRATE_MARITAL_STATE(cm.getRate_marital_state());
+			um.setRATE_NOACCOUNT_FIRSTEND_BAL(cm.getRate_noaccount_firstend_bal());
+			um.setRATE_NORMAL_AVENOTUSEDLIMITRAT(cm.getRate_normal_avenotusedlimitrat());
+			um.setRATE_RECENTLY_OPENCARD_LIMIT(cm.getRate_recently_opencard_limit());
+			um.setRATE_REGISTER(cm.getRate_register());
+	    	}
+		return um;
 	}
-/**
- * 
- * @param token
- * @param businessNo
- * @param cust_name
- * @param cert_type
- * @param cert_num
- * @param phoneNo
- * @return
- * @throws Exception
- */
+
+	//入库
+	public void savecredit(BankCredit um) {
+		bankCreditRepository.save(um);
+	}
+	
 	public boolean  saveInformation(String token, String businessNo, String cust_name, String cert_type,
 			String cert_num, String phoneNo) throws Exception {
 		
-		BackCredit cm=this.creditOracle(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
+		BankCredit cm=this.creditOracle(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
 		if (cm == null) {
 		HdCreditScoreModel returnxml = this.sendHdPost(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
-     return true;
-	 } else {
-	    BankCredit um = new BankCredit();
-		um.setSerial_No(businessNo);
-		um.setCreated_time(new Date());
-		um.setCreator("admin");
-		um.setCert_num(cm.getCert_num());
-		um.setCert_type(cm.getCert_type());
-		um.setCust_name(cm.getCust_name());
-		um.setRATE_CREDIT_ACCOUNT_COUNT(cm.getRate_credit_account_count());
-		um.setRATE_CREDITCARD_APPROVAL_COUNT(cm.getRate_creditcard_approval_count());
-		um.setRATE_CREDITREPOR_COUNT(cm.getRate_creditrepor_count());
-		um.setRATE_EDU_LEVEL(cm.getRate_edu_level());
-		um.setRATE_FIRSTNOACCOUNT_CARDAGE(cm.getRate_firstnoaccount_cardage());
-		um.setRATE_FIVEYEAR_MAXOVERDUE_COUNT(cm.getRate_fiveyear_maxoverdue_count());
-		um.setRATE_LOANOFF_LOANOPEN_RATIO(cm.getRate_loanoff_loanopen_ratio());
-		um.setRATE_MARITAL_STATE(cm.getRate_marital_state());
-		um.setRATE_NOACCOUNT_FIRSTEND_BAL(cm.getRate_noaccount_firstend_bal());
-		um.setRATE_NORMAL_AVENOTUSEDLIMITRAT(cm.getRate_normal_avenotusedlimitrat());
-		um.setRATE_RECENTLY_OPENCARD_LIMIT(cm.getRate_recently_opencard_limit());
-		um.setRATE_REGISTER(cm.getRate_register());
-		// 入库
-		bankCreditRepository.save(um);
-		return false;
+		 return true;
+	    } else {
+		 this.savecredit(cm);
+		 return false;
 	}
 		
 	}
 
-	
-	
 	
 	public HdCreditScoreModel sendHdPost(String token, String businessNo, String cust_name, String cert_type, String cert_num,
 			String phoneNo) throws Exception {
