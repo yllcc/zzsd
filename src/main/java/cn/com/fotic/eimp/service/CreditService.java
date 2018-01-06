@@ -2,6 +2,7 @@ package cn.com.fotic.eimp.service;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.DocumentException;
@@ -29,7 +32,9 @@ import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.HdCreditScoreModel;
+import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
+import cn.com.fotic.eimp.model.UserCreditReturnModel;
 import cn.com.fotic.eimp.repository.BankCreditRepository;
 import cn.com.fotic.eimp.repository.CreditRepository;
 import cn.com.fotic.eimp.repository.entity.BackCredit;
@@ -51,8 +56,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CreditService {
 
-	private VerificationUtils vt;
-
 	@Autowired
 	private CreditRepository creditRepository;
 
@@ -63,6 +66,32 @@ public class CreditService {
 	private CreditPersonalService creditPersonalService;
 
 	/**
+	 * 1.接收转换成json
+	 * 
+	 * @param request
+	 * @return
+	 * @throws IOException
+	 */
+	public String longinHttep(HttpServletRequest request) throws IOException {
+		int contentLength = request.getContentLength();
+		if (contentLength < 0) {
+			return null;
+		}
+		byte buffer[] = new byte[contentLength];
+		for (int i = 0; i < contentLength;) {
+			int len = request.getInputStream().read(buffer, i, contentLength - i);
+			if (len == -1) {
+				break;
+			}
+			i += len;
+		}
+		String a = new String(buffer, "utf-8");
+		String b = URLDecoder.decode(a.toString(), "utf-8");
+		return b;
+
+	}
+
+	/**
 	 * 校验证件类型证件号
 	 * 
 	 * @param custName
@@ -71,9 +100,9 @@ public class CreditService {
 	 * @return
 	 */
 	public boolean VerificationService(String custName, String idNo, String idType) {
-		boolean name = vt.nameValidate(custName);
+		boolean name = VerificationUtils.nameValidate(custName);
 		if (name == true) {
-			boolean idTypeAndIdNo = vt.cardNocheck(idType, idNo);
+			boolean idTypeAndIdNo = VerificationUtils.cardNocheck(idType, idNo);
 			if (idTypeAndIdNo == true) {
 				return true;
 			} else {
@@ -82,6 +111,53 @@ public class CreditService {
 		} else {
 			return false;
 		}
+
+	}
+
+	/**
+	 * 接受数据返回给上游
+	 * @param json
+	 * @return
+	 */
+	public UserCreditReturnModel verificationCredit(String json) {
+		UserCreditReturnModel um = new UserCreditReturnModel();
+		JSONObject jsonObject = JSON.parseObject(json);
+		// 判断是否存在content
+		if (jsonObject.containsKey("content")) {
+			String value = jsonObject.getString("content");
+			List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
+			for (UserCreditContentModel user : contentList) {
+				String idType = user.getIdType();
+				String idNo = user.getIdNo();
+				String custName = user.getCustName();
+				boolean verification = this.VerificationService(custName, idNo, idType);
+				if (verification == true) {
+					um.setReCode("01");
+					um.setReDesc("成功");
+					return um;
+				} else {
+					um.setReCode("02");
+					um.setReDesc("证件号或证件类型校验失败");
+					return um;
+				}
+			}
+		} else {
+			um.setReCode("03");
+			um.setReDesc("上送的格式不对，不是一个数组");
+			return um;
+		}
+		return um;
+	}
+/**
+ * 获取这批次流水号
+ * @param json
+ * @return
+ */
+	public String flownNo(String json) {
+
+		JSONObject jsonObject = JSON.parseObject(json);
+		String serialNo = jsonObject.getString("serialNo");
+		return serialNo;
 
 	}
 
@@ -138,20 +214,13 @@ public class CreditService {
 		String URL = "https://ds.handydata.cn/ds/service.ac";
 		String publicKey = "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIGm7bNehbstkfG/fAcZnrA3UGHVWjCRkP3S3/ZfF456ypdRAaEeqGILT+wB139K1HZIUy/Gl8slGS9r6TR961MCAwEAAQ==";
 		String channelId = "11009035";
-		// 平台
-		// String URL = "http://testds.handydata.cn:8011/dataservice-manage/";
 		String mkey = UUID.randomUUID().toString();
-
 		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
 		String strKey = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), publicKey);
-
-		String strxml = new String(
-				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
-
+		String strxml = new String(Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
 		String returnXml = new String(Base64Utils.encode(channelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
 		String xmlArr[] = reutrnResult.split("\\|");
-
 		if (xmlArr[0].equals("0")) {
 			String resMsg = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
 			hrm.setResMsg(resMsg);
@@ -164,7 +233,6 @@ public class CreditService {
 			JSONObject jsonObject = JSON.parseObject(tradeXml);
 			String resCode = jsonObject.getString("resCode");
 			String resMsg = jsonObject.getString("resMsg");
-
 			if (resCode.equals("0000")) {
 				// 判断是否存在content
 				if (jsonObject.containsKey("data")) {
@@ -194,10 +262,6 @@ public class CreditService {
 				hrm.setResCode(resCode);
 				hrm.setResMsg(resMsg);
 			}
-
-			// log.info("444" + new
-			// String(Base64Utils.encode(Md5Utils.md5ToHexStr(tradeXml).getBytes("utf-8"))));//
-			// BASE64(MD5(报文))
 			return hrm;
 		}
 	}
@@ -230,16 +294,16 @@ public class CreditService {
 	 * @param cert_num
 	 * @throws Exception
 	 */
-	public  BankCredit creditOracle(String token, String businessNo, String cust_name, String cert_type,
-			String cert_num, String phoneNo) throws Exception {
-	    	HdCreditReturnModel hcm = new HdCreditReturnModel();
-		   
-	     	// 查询人行存在评级信息
-	    	BackCredit cm = creditRepository.getOptName(cust_name, cert_type, cert_num);
-	    	BankCredit um = new BankCredit();
-	    	if (cm == null) {
-	    		return null;
-	    	}else {
+	public BankCredit creditOracle(String token, String businessNo, String cust_name, String cert_type, String cert_num,
+			String phoneNo) throws Exception {
+		HdCreditReturnModel hcm = new HdCreditReturnModel();
+
+		// 查询人行存在评级信息
+		BackCredit cm = creditRepository.getOptName(cust_name, cert_type, cert_num);
+		BankCredit um = new BankCredit();
+		if (cm == null) {
+			return null;
+		} else {
 			um.setSerial_No(businessNo);
 			um.setCreated_time(new Date());
 			um.setCreator("admin");
@@ -258,32 +322,58 @@ public class CreditService {
 			um.setRATE_NORMAL_AVENOTUSEDLIMITRAT(cm.getRate_normal_avenotusedlimitrat());
 			um.setRATE_RECENTLY_OPENCARD_LIMIT(cm.getRate_recently_opencard_limit());
 			um.setRATE_REGISTER(cm.getRate_register());
-	    	}
+		}
 		return um;
 	}
 
-	//入库
+	/**
+	 * 将查询到的视图入库
+	 * @param um
+	 */
+	
 	public void savecredit(BankCredit um) {
 		bankCreditRepository.save(um);
 	}
 	
-	public boolean  saveInformation(String token, String businessNo, String cust_name, String cert_type,
-			String cert_num, String phoneNo) throws Exception {
-		
-		BankCredit cm=this.creditOracle(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
-		if (cm == null) {
-		HdCreditScoreModel returnxml = this.sendHdPost(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
-		 return true;
-	    } else {
-		 this.savecredit(cm);
-		 return false;
-	}
-		
-	}
-
-	
-	public HdCreditScoreModel sendHdPost(String token, String businessNo, String cust_name, String cert_type, String cert_num,
+    /**
+     * 入库或者发送韩迪http请求
+     * @param token
+     * @param businessNo
+     * @param cust_name
+     * @param cert_type
+     * @param cert_num
+     * @param phoneNo
+     * @return
+     * @throws Exception
+     */
+	public boolean saveInformation(String token, String businessNo, String cust_name, String cert_type, String cert_num,
 			String phoneNo) throws Exception {
+
+		BankCredit cm = this.creditOracle(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
+		if (cm == null) {
+			HdCreditScoreModel returnxml = this.sendHdPost(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
+			//查询韩迪返回的数据进行解析评分
+			log.info("-------------------------------------------");
+			
+			return true;
+		} else {
+			this.savecredit(cm);
+			return false;
+		}
+	}
+/**
+ * 发送韩迪http请求
+ * @param token
+ * @param businessNo
+ * @param cust_name
+ * @param cert_type
+ * @param cert_num
+ * @param phoneNo
+ * @return
+ * @throws Exception
+ */
+	public HdCreditScoreModel sendHdPost(String token, String businessNo, String cust_name, String cert_type,
+			String cert_num, String phoneNo) throws Exception {
 		log.info("发送翰迪http请求.......");
 		UserCreditQueneModel user = new UserCreditQueneModel();
 		user.setBusinessNo(businessNo);
@@ -293,10 +383,9 @@ public class CreditService {
 		String xml = creditPersonalService.getCreditRequestXml(user);
 		String returnxml = creditPersonalService.sendHdCredit(xml);
 		log.info("---------------------------" + returnxml);
-		HdCreditScoreModel hm=JaxbUtil.readValue(returnxml,HdCreditScoreModel.class);
-		if(hm.getResCode().equals("0000")) {
+		HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
+		if (hm.getResCode().equals("0000")) {
 			log.info("成功");
-			
 		}
 		return hm;
 	}
@@ -363,6 +452,5 @@ public class CreditService {
 		}
 
 	}
-	
-	
+
 }

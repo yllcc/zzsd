@@ -41,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/")
 public class FraudController {
-
 	@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
@@ -99,9 +98,8 @@ public class FraudController {
 					// 2.进行数据加密,发送数据给韩迪
 					try {
 						HdCreditReturnModel r = creditService.checkRiskSystem(xml);
-						/**
-						 * 有问题需要改，
-						 */
+						
+						
 						
 						
 						if (r.getResCode().equals("0000") ) {
@@ -138,58 +136,15 @@ public class FraudController {
 
 	@RequestMapping(value = "/independentAudit")
 	private UserCreditReturnModel independentAudit(HttpServletRequest request) throws IOException {
-		UserCreditReturnModel um = new UserCreditReturnModel();
-		int contentLength = request.getContentLength();
-		if (contentLength < 0) {
-			return null;//TODO
-		}
-		byte buffer[] = new byte[contentLength];
-		for (int i = 0; i < contentLength;) {
-			int len = request.getInputStream().read(buffer, i, contentLength - i);
-			if (len == -1) {
-				break;
-			}
-			i += len;
-		}
-		String a = new String(buffer, "utf-8");
-		String b = URLDecoder.decode(a.toString(), "utf-8");
-		log.info(b);
-
-		JSONObject jsonObject = JSON.parseObject(b);
-		String token = jsonObject.getString("token");
-		String serialNo=jsonObject.getString("serialNo");
-		// 判断是否存在content
-		if (jsonObject.containsKey("content")) {
-			String value = jsonObject.getString("content");
-			JSON_TYPE jsonType = JsonTypeUtil.getJsonType(value);
-			// 判断是否为content数组
-			if (JSON_TYPE.JSON_TYPE_ARRAY.equals(jsonType)) {
-				List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
-				for (UserCreditContentModel user : contentList) {
-					String businessNo = user.getBusinessNo();
-					String idType = user.getIdType();
-					String idNo = user.getIdNo();
-					String custName = user.getCustName();
-					boolean verification = creditService.VerificationService(custName, idNo, idType);
-					if (verification == true) {
-						log.info("调用反欺诈......"+businessNo + ":开始处理");
-						redisTemplate.opsForValue().set(serialNo, b);
-						jmsMessagingTemplate.convertAndSend(archiveBufferQueue, serialNo);
-						um.setReCode("01");
-						um.setReDesc("成功");
-						return um;
-					} else {
-						um.setReCode("02");
-						um.setReDesc("证件号或证件类型校验失败");
-						return um;
-					}
-				}
-			}else {
-				um.setReCode("03");
-				um.setReDesc("上送的格式不对，不是一个数组");
+		       //1.接受http请求
+				String b=creditService.longinHttep(request);
+				//2.校验数据
+				UserCreditReturnModel um =creditService.verificationCredit(b);
+				//3.获取流水号
+				String serialNo=creditService.flownNo(b);
+				//4.返回队列(JSON,流水号)
+				redisTemplate.opsForValue().set(serialNo, b);
+				jmsMessagingTemplate.convertAndSend(archiveBufferQueue, serialNo);
 				return um;
-			}
-		}
-		return um;
 	}
 }
