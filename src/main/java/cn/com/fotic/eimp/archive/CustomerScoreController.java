@@ -42,7 +42,7 @@ import cn.com.fotic.eimp.model.JSON_TYPE;
 @RequestMapping("/")
 public class CustomerScoreController {
 
-	/*@Autowired
+	@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	@Autowired
@@ -102,5 +102,5 @@ public class CustomerScoreController {
 		redisTemplate.opsForValue().set(serialNo, b);
 		jmsMessagingTemplate.convertAndSend(archiveBufferQueue, serialNo);
 		return um;
-	}*/
+	}
 }
