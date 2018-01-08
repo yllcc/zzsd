@@ -17,6 +17,21 @@ public class QueueConfig {
     private QueueProperties queueProperties;
 
     @Bean
+    public Queue fraudArchiveBufferQueue(){
+        return new ActiveMQQueue(queueProperties.getDestination("fraudArchiveBuffer"));
+    }
+
+    @Bean
+    public Queue fraudArchiveProcessQueue(){
+        return new ActiveMQQueue(queueProperties.getDestination("fraudArchiveProcess"));
+    }
+
+    @Bean
+    public Queue fraudArchiveCallbackQueue(){
+        return new ActiveMQQueue(queueProperties.getDestination("fraudArchiveCallback"));
+    }
+    
+    @Bean
     public Queue archiveBufferQueue(){
         return new ActiveMQQueue(queueProperties.getDestination("archiveBuffer"));
     }
@@ -30,4 +45,6 @@ public class QueueConfig {
     public Queue archiveCallbackQueue(){
         return new ActiveMQQueue(queueProperties.getDestination("archiveCallback"));
     }
+    
+    
 }

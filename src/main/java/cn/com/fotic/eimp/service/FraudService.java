@@ -11,13 +11,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-
 import cn.com.fotic.eimp.model.CallBackUserCreditContentModel;
 import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
@@ -25,26 +22,24 @@ import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.primary.CreditFraudRepository;
 import cn.com.fotic.eimp.repository.entity.CreditFraudDic;
-import cn.com.fotic.eimp.repository.entity.CreditPersonalDic;
-import cn.com.fotic.eimp.second.BackCreditRepository;
 import cn.com.fotic.eimp.utils.JaxbUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
+ * 自主审贷反欺诈服务
  * @author liugj
  *
  */
 @Slf4j
 @Service
 public class FraudService {
-	
+
 	@Autowired
 	private CreditService creditService;
 
 	@Autowired
-	private CreditFraudRepository  creditFraudRepository;
-	
+	private CreditFraudRepository creditFraudRepository;
+
 	private final String channelId = "11009028";// 渠道号
 
 	private final String application = "GwBiz.Req";// 应用名称
@@ -58,81 +53,77 @@ public class FraudService {
 	private final String ProductItemCode = "100102";// 产品子项
 	// 回调反欺诈URL
 	private final String fraudUrl = "http://172.16.112.180:9090/wmxtcms/callback/fraud.action";
-	
+
 	/**
+	 * 信贷反欺诈入口
 	 * 
 	 * @param fraudjson
 	 * @return
 	 */
-	
-
 	public CallBackUserCreditModel fraudService(String fraudjson) {
-		
-	CallBackUserCreditModel cm = new CallBackUserCreditModel();
-	List<CallBackUserCreditContentModel> reclist = new ArrayList<CallBackUserCreditContentModel>();
-	JSONObject jsonObject = JSON.parseObject(fraudjson);
-	String token = jsonObject.getString("token");
-	String serialNo = jsonObject.getString("serialNo");
-	String platformNo = jsonObject.getString("platformNo");
-	String txTime = jsonObject.getString("txTime");
-	// 判断是否存在content
-	if (jsonObject.containsKey("content")) {
-		String value = jsonObject.getString("content");
-		List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
-		for (UserCreditContentModel user : contentList) {
-			CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
-			String businessNo = user.getBusinessNo();
-			String idNo = user.getIdNo();
-			String idType = user.getIdType();
-			String custName = user.getCustName();			
-			String phone = user.getPhoneNo();
-			String fraudScore = "";
-			// 1.生成xml
-			String xml = this.HdFraudService(idNo, custName);
-			// 2.进行数据加密,发送数据给韩迪
-			try {
-				HdCreditReturnModel r = creditService.checkRiskSystem(xml);
-				if (r.getResCode().equals("0000")) {
-					// 韩迪返回查询成功信息
-					CreditFraudDic cpd=new CreditFraudDic();
-					fraudScore = r.getData().get(0).getScore();
-					cpd.setSerialNo(serialNo);
-					cpd.setBusinessNo(businessNo);
-					cpd.setApplyTime(new Date());
-					cpd.setCustName(custName);
-					cpd.setCertType(idType);
-					cpd.setCertNum(idNo);
-					cpd.setPhone(phone);
-					cpd.setFraudScore(fraudScore);
-					cpd.setFraudNum(businessNo);
-					fraudScore = r.getData().get(0).getScore();
-					//将反欺诈分数入库
-					 this.fraudScoreSave(cpd);
-					 
-					log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
-				} else {
-					// 韩迪返回查询错误信息
-					log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
+
+		CallBackUserCreditModel cm = new CallBackUserCreditModel();
+		List<CallBackUserCreditContentModel> reclist = new ArrayList<CallBackUserCreditContentModel>();
+		JSONObject jsonObject = JSON.parseObject(fraudjson);
+		String token = jsonObject.getString("token");
+		String serialNo = jsonObject.getString("serialNo");
+		String platformNo = jsonObject.getString("platformNo");
+		String txTime = jsonObject.getString("txTime");
+		// 判断是否存在content
+		if (jsonObject.containsKey("content")) {
+			String value = jsonObject.getString("content");
+			List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
+			for (UserCreditContentModel user : contentList) {
+				CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
+				String businessNo = user.getBusinessNo();
+				String idNo = user.getIdNo();
+				String idType = user.getIdType();
+				String custName = user.getCustName();
+				String phone = user.getPhoneNo();
+				String fraudScore = "";
+				// 1.生成xml
+				String xml = this.HdFraudService(idNo, custName);
+				// 2.进行数据加密,发送数据给韩迪
+				try {
+					HdCreditReturnModel r = creditService.hdCreditService(xml);
+					if (r.getResCode().equals("0000")) {
+						// 韩迪返回查询成功信息
+						CreditFraudDic cpd = new CreditFraudDic();
+						fraudScore = r.getData().get(0).getScore();
+						cpd.setSerialNo(serialNo);
+						cpd.setBusinessNo(businessNo);
+						cpd.setApplyTime(new Date());
+						cpd.setCustName(custName);
+						cpd.setCertType(idType);
+						cpd.setCertNum(idNo);
+						cpd.setPhone(phone);
+						cpd.setFraudScore(fraudScore);
+						cpd.setFraudNum(businessNo);
+						fraudScore = r.getData().get(0).getScore();
+						// 将反欺诈分数入库
+						this.fraudScoreSave(cpd);
+						log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
+					} else {
+						// 韩迪返回查询错误信息
+						log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				csc.setBusinessNo(businessNo);
+				csc.setFraudScore(fraudScore);
+				reclist.add(csc);
 			}
-			csc.setBusinessNo(businessNo);
-			csc.setFraudScore(fraudScore);
-			reclist.add(csc);
+			cm.setContent(reclist);
+			cm.setPlatformNo(platformNo);
+			cm.setSerialNo(serialNo);
+			cm.setToken(token);
+			cm.setTxTime(txTime);
 		}
-		cm.setContent(reclist);
-		cm.setPlatformNo(platformNo);
-		cm.setSerialNo(serialNo);
-		cm.setToken(token);
-		cm.setTxTime(txTime);
+		return cm;
 	}
-      return cm;
-	}
-	
-	
-	
+
 	/**
 	 * 调用翰迪接口,反欺诈 1.生成xml
 	 * 
@@ -166,7 +157,6 @@ public class FraudService {
 		hd.setMac("");
 		String xmlReq = JaxbUtil.convertToXml(hd);
 		return xmlReq;
-
 	}
 
 	/**
@@ -178,17 +168,20 @@ public class FraudService {
 	public void fraudCallBack(String fraudjson) {
 		log.info("回调反欺诈接口" + fraudjson);
 		this.callBackCommon(fraudUrl, fraudjson);
-
 	}
+
 	/**
 	 * 反欺诈评分入库
 	 */
-	public void fraudScoreSave(CreditFraudDic cpd) {		
-		creditFraudRepository.save(cpd);	
+	public void fraudScoreSave(CreditFraudDic cpd) {
+		creditFraudRepository.save(cpd);
 	}
-
+   /**
+    * 业务处理成功回调信贷
+    * @param fraudUrl
+    * @param json
+    */
 	public void callBackCommon(String fraudUrl, String json) {
-
 		try {
 			// 创建连接
 			URL url = new URL(fraudUrl);
@@ -200,15 +193,12 @@ public class FraudService {
 			connection.setInstanceFollowRedirects(true);
 			connection.setRequestProperty("Content-Type", "application/json");
 			connection.connect();
-
 			// POST请求
 			DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-
 			String str = URLEncoder.encode(json, "utf-8");
 			out.writeBytes(str);
 			out.flush();
 			out.close();
-
 			// 读取响应
 			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			String lines;
@@ -217,8 +207,8 @@ public class FraudService {
 				lines = new String(lines.getBytes(), "utf-8");
 				sb.append(lines);
 			}
-			String sss = URLDecoder.decode(sb.toString(), "utf-8");
-			System.out.println(sss);
+			String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
+			log.info(callBackCredit);
 			reader.close();
 			// 断开连接
 			connection.disconnect();
