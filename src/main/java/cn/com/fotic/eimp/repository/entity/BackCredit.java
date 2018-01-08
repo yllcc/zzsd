@@ -14,7 +14,7 @@ import lombok.ToString;
 @Data
 @ToString
 @Entity
-@Table(name = "BACK_CREDIT")
+@Table(name = "VIEW_CRP_RATE")
 public class BackCredit {
 
 	@Id

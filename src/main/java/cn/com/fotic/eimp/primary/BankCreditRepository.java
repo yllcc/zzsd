@@ -1,4 +1,4 @@
-package cn.com.fotic.eimp.repository;
+package cn.com.fotic.eimp.primary;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

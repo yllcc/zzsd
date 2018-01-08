@@ -1,4 +1,4 @@
-package cn.com.fotic.eimp.repository;
+package cn.com.fotic.eimp.primary;
 
 import cn.com.fotic.eimp.repository.entity.ParmDic;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +11,3 @@ public interface ParmDicRepository extends JpaRepository<ParmDic, Long> {
     public String getOptName(@Param("key_name") String key_name,@Param("opt_code") String opt_code);
 
 }
-

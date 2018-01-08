@@ -3,12 +3,8 @@ package cn.com.fotic.eimp.service;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -22,23 +18,22 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
 import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
-import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.HdCreditScoreModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.model.UserCreditReturnModel;
-import cn.com.fotic.eimp.repository.BankCreditRepository;
-import cn.com.fotic.eimp.repository.CreditRepository;
+import cn.com.fotic.eimp.primary.BankCreditRepository;
+import cn.com.fotic.eimp.primary.CreditPersonalRepository;
 import cn.com.fotic.eimp.repository.entity.BackCredit;
 import cn.com.fotic.eimp.repository.entity.BankCredit;
+import cn.com.fotic.eimp.second.BackCreditRepository;
 import cn.com.fotic.eimp.utils.Base64Utils;
 import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
@@ -55,9 +50,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class CreditService {
+	// 韩迪接口加密请求URL
+	private final String URL = "https://ds.handydata.cn/ds/service.ac";
+	// 韩迪接口加密公钥
+	private final String publicKey = "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIGm7bNehbstkfG/fAcZnrA3UGHVWjCRkP3S3/ZfF456ypdRAaEeqGILT+wB139K1HZIUy/Gl8slGS9r6TR961MCAwEAAQ==";
+	// 渠道号
+	private final String channelId = "11009035";
+	// 回调征信UR
+	private final String callbackcrediturl = "http://172.16.112.180:9090/wmxtcms/callback/custom.action";
 
 	@Autowired
-	private CreditRepository creditRepository;
+	private BackCreditRepository backCreditRepository;
 
 	@Autowired
 	private BankCreditRepository bankCreditRepository;
@@ -65,6 +68,75 @@ public class CreditService {
 	@Autowired
 	private CreditPersonalService creditPersonalService;
 
+	@Autowired
+	private FraudService fraudService;
+	
+	public  CallBackCustomerScoreModel creditScorreService(String creditjson) {
+	
+	CallBackCustomerScoreModel cm = new CallBackCustomerScoreModel();
+	List<CallBackCustomerScoreContentModel> reclist = new ArrayList<CallBackCustomerScoreContentModel>();
+	JSONObject jsonObject = JSON.parseObject(creditjson);
+	String token = jsonObject.getString("token");
+	String serialNo = jsonObject.getString("serialNo");
+	String platformNo = jsonObject.getString("platformNo");
+	String txTime = jsonObject.getString("txTime");
+	// 判断是否存在content
+	if (jsonObject.containsKey("content")) {
+		String value = jsonObject.getString("content");
+		// 判断是否为content数组
+		List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
+		for (UserCreditContentModel user : contentList) {
+			CallBackCustomerScoreContentModel csc = new CallBackCustomerScoreContentModel();
+			String businessNo = user.getBusinessNo();
+			String idType = user.getIdType();
+			String idNo = user.getIdNo();
+			String custName = user.getCustName();
+			String phoneNo = user.getPhoneNo();
+			String customScore = "";
+			try {
+				boolean a = this.saveInformation(token, businessNo, custName, idType, idNo, phoneNo);
+				if (a == true) {
+					// 查询征信数据库成功
+					log.info("发送韩迪成功");
+					customScore = "1000";
+
+				} else {
+					// 查询韩迪
+					log.info("入库成功");
+					customScore = "10000";
+
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			csc.setBusinessNo(businessNo);
+			csc.setCustomScoree(customScore);
+			reclist.add(csc);
+		}
+		cm.setContent(reclist);
+		cm.setPlatformNo(platformNo);
+		cm.setSerialNo(serialNo);
+		cm.setToken(token);
+		cm.setTxTime(txTime);
+	}
+	return cm;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * 1.接收转换成json
 	 * 
@@ -116,6 +188,7 @@ public class CreditService {
 
 	/**
 	 * 接受数据返回给上游
+	 * 
 	 * @param json
 	 * @return
 	 */
@@ -148,52 +221,17 @@ public class CreditService {
 		}
 		return um;
 	}
-/**
- * 获取这批次流水号
- * @param json
- * @return
- */
-	public String flownNo(String json) {
 
+	/**
+	 * 获取这批次流水号
+	 * 
+	 * @param json
+	 * @return
+	 */
+	public String flownNo(String json) {
 		JSONObject jsonObject = JSON.parseObject(json);
 		String serialNo = jsonObject.getString("serialNo");
 		return serialNo;
-
-	}
-
-	/**
-	 * 调用翰迪接口，征信 1.生成xml
-	 * 
-	 * @param idNo
-	 * @param custName
-	 * @return
-	 */
-	public String HdCreditService(String idNo, String custName) {
-		HdAntiFraudModel hd = new HdAntiFraudModel();
-		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
-		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
-		hd.setSendTime(sendTime);
-		hd.setTransCode("100101");
-		hd.setVersion("1.0.0");
-		hd.setApplication("GwBiz.Req");
-		hd.setCertNo(idNo);
-		hd.setChannelId("11009028");
-		hd.setChannelOrderId(sendTime);
-		hd.setIp("");
-		hd.setLinkedMerchantId("2088621466375255");
-		hd.setMobile("");
-		hd.setName(custName);
-		hd.setOpenId("");
-		hd.setEmail("");
-		hd.setImei("");
-		hd.setAddress("");
-		hd.setAddress("");
-		hd.setBankCard("");
-		hd.setProductItemCode("100108");
-		hd.setWifiMac("");
-		hd.setMac("");
-		String xmlReq = JaxbUtil.convertToXml(hd);
-		return xmlReq;
 
 	}
 
@@ -211,13 +249,12 @@ public class CreditService {
 		// "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIkt25i+OsoCyMhjNQ9+298iCSEzQjtStStv+gJK+rQ57DA23ie3tI/7+/845IlrqGF8U42Om6POVEIj/jNHPbkCAwEAAQ==";
 		// String channelId = "11009028";
 		// 生产
-		String URL = "https://ds.handydata.cn/ds/service.ac";
-		String publicKey = "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIGm7bNehbstkfG/fAcZnrA3UGHVWjCRkP3S3/ZfF456ypdRAaEeqGILT+wB139K1HZIUy/Gl8slGS9r6TR961MCAwEAAQ==";
-		String channelId = "11009035";
+
 		String mkey = UUID.randomUUID().toString();
 		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
 		String strKey = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), publicKey);
-		String strxml = new String(Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
+		String strxml = new String(
+				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
 		String returnXml = new String(Base64Utils.encode(channelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
 		String xmlArr[] = reutrnResult.split("\\|");
@@ -299,14 +336,14 @@ public class CreditService {
 		HdCreditReturnModel hcm = new HdCreditReturnModel();
 
 		// 查询人行存在评级信息
-		BackCredit cm = creditRepository.getOptName(cust_name, cert_type, cert_num);
+		BackCredit cm = backCreditRepository.getOptName(cust_name, cert_type, cert_num);
 		BankCredit um = new BankCredit();
 		if (cm == null) {
 			return null;
 		} else {
 			um.setSerial_No(businessNo);
 			um.setCreated_time(new Date());
-			um.setCreator("admin");
+			um.setCreator(cust_name);
 			um.setCert_num(cert_num);
 			um.setCert_type(cert_type);
 			um.setCust_name(cust_name);
@@ -328,53 +365,30 @@ public class CreditService {
 
 	/**
 	 * 将查询到的视图入库
+	 * 
 	 * @param um
 	 */
-	
+
 	public void savecredit(BankCredit um) {
 		bankCreditRepository.save(um);
 	}
-	
-    /**
-     * 入库或者发送韩迪http请求
-     * @param token
-     * @param businessNo
-     * @param cust_name
-     * @param cert_type
-     * @param cert_num
-     * @param phoneNo
-     * @return
-     * @throws Exception
-     */
-	public boolean saveInformation(String token, String businessNo, String cust_name, String cert_type, String cert_num,
-			String phoneNo) throws Exception {
 
-		BankCredit cm = this.creditOracle(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
-		if (cm == null) {
-			HdCreditScoreModel returnxml = this.sendHdPost(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
-			//查询韩迪返回的数据进行解析评分
-			log.info("-------------------------------------------");
-			
-			return true;
-		} else {
-			this.savecredit(cm);
-			return false;
-		}
-	}
-/**
- * 发送韩迪http请求
- * @param token
- * @param businessNo
- * @param cust_name
- * @param cert_type
- * @param cert_num
- * @param phoneNo
- * @return
- * @throws Exception
- */
+
+	/**
+	 * 发送韩迪http请求
+	 * 
+	 * @param token
+	 * @param businessNo
+	 * @param cust_name
+	 * @param cert_type
+	 * @param cert_num
+	 * @param phoneNo
+	 * @return
+	 * @throws Exception
+	 */
 	public HdCreditScoreModel sendHdPost(String token, String businessNo, String cust_name, String cert_type,
 			String cert_num, String phoneNo) throws Exception {
-		log.info("发送翰迪http请求.......");
+		log.info("发送翰迪http请求查询征信.......");
 		UserCreditQueneModel user = new UserCreditQueneModel();
 		user.setBusinessNo(businessNo);
 		user.setCustName(cust_name);
@@ -382,74 +396,53 @@ public class CreditService {
 		user.setPhoneNo(phoneNo);
 		String xml = creditPersonalService.getCreditRequestXml(user);
 		String returnxml = creditPersonalService.sendHdCredit(xml);
-		log.info("---------------------------" + returnxml);
+		log.info("翰迪返回征信：" + returnxml);
 		HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
 		if (hm.getResCode().equals("0000")) {
 			log.info("成功");
 		}
 		return hm;
 	}
+	
+	/**
+	 * 入库或者发送韩迪http请求
+	 * 
+	 * @param token
+	 * @param businessNo
+	 * @param cust_name
+	 * @param cert_type
+	 * @param cert_num
+	 * @param phoneNo
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean saveInformation(String token, String businessNo, String cust_name, String cert_type, String cert_num,
+			String phoneNo) throws Exception {
+
+		BankCredit cm = this.creditOracle(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
+		if (cm == null) {
+			HdCreditScoreModel returnxml = this.sendHdPost(token, businessNo, cust_name, cert_type, cert_num, phoneNo);
+			// 查询韩迪返回的数据进行解析评分
+			log.info("-------------------------------------------");
+
+			return true;
+		} else {
+			this.savecredit(cm);
+			//// 查询人行的数据的数据进行解析评分
+			log.info("-------------------------------------------");
+			return false;
+		}
+	}
+
 
 	/**
 	 * 回调征信接口
 	 * 
-	 * @param businessNo
-	 * @param customScore
+	 * @param json
 	 */
-	public void creditCallBack(String token, String businessNo, String customScore, String custName) {
-		CallBackCustomerScoreModel cm = new CallBackCustomerScoreModel();
-		List<CallBackCustomerScoreContentModel> csm = new ArrayList<CallBackCustomerScoreContentModel>();
-		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
-		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
-		CallBackCustomerScoreContentModel cc = new CallBackCustomerScoreContentModel();
-		cc.setBusinessNo(businessNo);
-		cc.setCustomScoree(customScore);
-		csm.add(cc);
-		cm.setContent(csm);
-		cm.setContent(csm);
-		cm.setPlatformNo(custName);
-		cm.setSerialNo(businessNo);
-		cm.setToken(token);
-		cm.setTxTime(sendTime);
-
-		String json = JSON.toJSONString(cm);
-		log.info("回调征信接口:" + json);
-		try {
-			// 创建连接
-			URL url = new URL("http://172.16.112.180:9090/wmxtcms/callback/custom.action");
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setDoOutput(true);
-			connection.setDoInput(true);
-			connection.setRequestMethod("POST");
-			connection.setUseCaches(false);
-			connection.setInstanceFollowRedirects(true);
-			connection.setRequestProperty("Content-Type", "application/json");
-			connection.connect();
-
-			// POST请求
-			DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-
-			String str = URLEncoder.encode(json, "utf-8");
-			out.writeBytes(str);
-			out.flush();
-			out.close();
-
-			// 读取响应
-			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-			String lines;
-			StringBuffer sb = new StringBuffer("");
-			while ((lines = reader.readLine()) != null) {
-				lines = new String(lines.getBytes(), "utf-8");
-				sb.append(lines);
-			}
-			String sss = URLDecoder.decode(sb.toString(), "utf-8");
-			System.out.println(sss);
-			reader.close();
-			// 断开连接
-			connection.disconnect();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public void creditCallBack(String json) {
+		log.info("信贷回调征信接口" + json);
+		fraudService.callBackCommon(callbackcrediturl, json);
 
 	}
 

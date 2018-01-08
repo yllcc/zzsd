@@ -5,10 +5,13 @@ import java.util.Date;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import cn.com.fotic.eimp.model.HdCreditRequestModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
+import cn.com.fotic.eimp.primary.CreditPersonalRepository;
+import cn.com.fotic.eimp.repository.entity.CreditPersonalDic;
 import cn.com.fotic.eimp.utils.Base64Utils;
 import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
@@ -25,6 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class CreditPersonalService {
+	
+	
+	
 	
 	private final String key="MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIGm7bNehbstkfG/fAcZnrA3UGHVWjCRkP3S3/ZfF456ypdRAaEeqGILT+wB139K1HZIUy/Gl8slGS9r6TR961MCAwEAAQ==";
 
@@ -49,7 +55,7 @@ public class CreditPersonalService {
 		requestModel.setSendTime(sendTime);
 		requestModel.setTransCode(transCode);
 		requestModel.setChannelId("11111100011");
-		requestModel.setChannelOrderId(sendTime);
+		requestModel.setChannelOrderId(JaxbUtil.getRandomStringByLength(30));
 		requestModel.setName(model.getCustName());
 		requestModel.setCid(model.getIdNo());
 		requestModel.setMobile(model.getPhoneNo());
@@ -102,6 +108,4 @@ public class CreditPersonalService {
 			return errormsg;
 		}
 	}
-	
-	
 }
