@@ -45,9 +45,11 @@ public class CreditPersonalDic {
 	@Column(name="PHONE")
 	private String phone;// 手机号
 	@Column(name="APPLY_PERSON")
-	private String appltPerson;//申请人
+	private String applyPerson;//申请人
 	@Column(name="CREDIT_SCORE")
 	private String creditScore;//征信评分
+	@Column(name="SCORE")
+	private String score;//信贷系统评分
 	@Column(name="CHECK_TIME")
 	private Date checkTime;//查征时间
 	@Column(name="STABILITY")
@@ -100,6 +102,8 @@ public class CreditPersonalDic {
 	private String bankCardHistory;//银行账龄等级
 	@Column(name="IS_TARGERT")
 	private String isTargert;//是否受行业关注（1是2否）
+	@Column(name="RESPONSE_BODY")
+	private String responseBody;
 	@Column(name="ATTRIBUTES1")
 	private String attributes1;// 字段1
 	@Column(name="ATTRIBUTES2")

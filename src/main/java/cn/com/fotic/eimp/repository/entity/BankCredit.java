@@ -2,6 +2,7 @@ package cn.com.fotic.eimp.repository.entity;
 
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -25,27 +26,45 @@ public class BankCredit {
 	@SequenceGenerator(name = "SEQ_BANK_CREDIT", sequenceName = "SEQ_BANK_CREDIT",allocationSize=1)
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_BANK_CREDIT")  
 	private Integer id;
-	private String  serial_No;//流水号
-	private String  cust_name   ;//客户名称'
-	private String  cert_type  ;//证件类型
-	private String  cert_num  ;//证件号码
-	private String  RATE_CREDITCARD_APPROVAL_COUNT;//'信用卡审批次数
-	private String  RATE_CREDITREPOR_COUNT   ;//近3个月贷款审批次数
-	private String  RATE_LOANOFF_LOANOPEN_RATIO;//过去贷款结清数与过去贷款开户数之比'
-	private String  RATE_MARITAL_STATE ;//婚姻状态
-	private String  RATE_EDU_LEVEL;//学历
-	private String  RATE_NOACCOUNT_FIRSTEND_BAL;//'未销户贷记卡最早额度与最近额度之差'
-	private String  RATE_FIVEYEAR_MAXOVERDUE_COUNT;//五年内最大逾期次数'
-	private String  RATE_REGISTER;//性别
-	private String  RATE_CREDIT_ACCOUNT_COUNT;//'信贷账户数
-	private String  RATE_NORMAL_AVENOTUSEDLIMITRAT;//正常贷记卡平均未用额度组占比
-	private String  RATE_RECENTLY_OPENCARD_LIMIT;//最近开户贷记卡额度
-	private String  RATE_FIRSTNOACCOUNT_CARDAGE;//最早未销户贷记卡卡龄
-	private String  creator;//创建人
-	private Date created_time;//创建时间
-	private String  updater;//修改人
-	private Date updated_time;//修改时间
+	@Column(name="SERIAL_NO")
+	private String  serialNo;//流水号
+	@Column(name="CUST_NAME")
+	private String  custName   ;//客户名称'
+	@Column(name="CUST_Type")
+	private String  certType  ;//证件类型
+	@Column(name="CUST_NUM")
+	private String  certNum  ;//证件号码
+	@Column(name="RATE_CREDITCARD_APPROVAL_COUNT")
+	private String  rateCreditcardApprovalCont;//'信用卡审批次数
+	@Column(name="RATE_CREDITREPOR_COUNT")
+	private String   rateCreditreporCount  ;//近3个月贷款审批次数
+	@Column(name="RATE_LOANOFF_LOANOPEN_RATIO")
+	private String  rateLoanoffLoanopenRatio;//过去贷款结清数与过去贷款开户数之比'
+	@Column(name="RATE_MARITAL_STATE")
+	private String rateMaritalState  ;//婚姻状态
+	@Column(name="RATE_EDU_LEVEL")
+	private String rateEduLevel ;//学历
+	@Column(name="RATE_NOACCOUNT_FIRSTEND_BAL")
+	private String rateNoaccountFirstendBal ;//'未销户贷记卡最早额度与最近额度之差'
+	@Column(name="RATE_FIVEYEAR_MAXOVERDUE_COUNT")
+	private String rateFiveyearMaxoverdueCount ;//五年内最大逾期次数'
+	@Column(name="RATE_REGISTER")
+	private String  rateRegister;//性别
+	@Column(name="RATE_CREDIT_ACCOUNT_COUNT")
+	private String  rateCreditAccountCount;//'信贷账户数
+	@Column(name="RATE_NORMAL_AVENOTUSEDLIMITRAT")
+	private String  rateNormalAvenotusedlimitrat;//正常贷记卡平均未用额度组占比
+	@Column(name="RATE_RECENTLY_OPENCARD_LIMIT")
+	private String  rateRecentlyOpencardLimit;//最近开户贷记卡额度
+	@Column(name="RATE_FIRSTNOACCOUNT_CARDAGE")
+	private String rateFirstnoaccountCardage ;//最早未销户贷记卡卡龄
+	@Column(name="APPLY_TIME")
+	private Date applyTime;//申请时间
+	@Column(name="APPLY_PERSON")
+	private String  applyPerson;//申请人
+	@Column(name="ATTRIBUTES1")
 	private String  attributes1;//字段1
+	@Column(name="ATTRIBUTES1")
 	private String  attributes2;//字段2
 
 

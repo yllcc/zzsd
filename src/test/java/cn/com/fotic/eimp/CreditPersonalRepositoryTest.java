@@ -31,7 +31,7 @@ public class CreditPersonalRepositoryTest {
 		personaldic.setCertType("1");// 证件类型
 		personaldic.setCertNum("12121");// 证件号
 		personaldic.setPhone("18310088172");// 手机号
-		personaldic.setAppltPerson("1221");;//申请人
+		personaldic.setApplyPerson("1221");;//申请人
 		personaldic.setCreditScore("11");//征信评分
 		personaldic.setCheckTime(new Date());//查征时间
 		personaldic.setStability("1");;//稳定性 (极强、强、一般、 弱、极弱，分别 对应[1,2,3,4,5]
