@@ -37,7 +37,7 @@ public class CreditFraudDic {
 	private String businessNo;// 业务号
 	@Column(name="CUST_NAME")
 	private String custName;// 姓名
-	@Column(name="CERT_TYPE",length=30)
+	@Column(name="CERT_TYPE",length=2)
 	private String certType;// 证件类型
 	@Column(name="CERT_NUM")
 	private String certNum;// 证件号

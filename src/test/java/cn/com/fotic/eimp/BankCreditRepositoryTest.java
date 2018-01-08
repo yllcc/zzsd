@@ -8,8 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import cn.com.fotic.eimp.repository.BankCreditRepository;
+import cn.com.fotic.eimp.primary.BankCreditRepository;
 import cn.com.fotic.eimp.repository.entity.BankCredit;
 
 @RunWith(SpringRunner.class)

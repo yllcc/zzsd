@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import cn.com.fotic.eimp.repository.CreditFraudRepository;
+import cn.com.fotic.eimp.primary.CreditFraudRepository;
 import cn.com.fotic.eimp.repository.entity.CreditFraudDic;
 
 
@@ -32,7 +32,7 @@ public class CreditFraudRepositoryTest {
 		creditFraudDic.setEmail("112");// 邮箱
 		creditFraudDic.setBankCard("11");// 银行卡
 		creditFraudDic.setAddress("1");// 地址
-		creditFraudDic.setAppltTime(new Date());;// 申请时间
+		creditFraudDic.setApplyTime(new Date());;// 申请时间
 		creditFraudDic.setAppltPerson("12");// 申请人
 		creditFraudDic.setFraudScore("1");// 反欺诈评分
 		creditFraudDic.setCheckTime(new Date());// 查证时间
