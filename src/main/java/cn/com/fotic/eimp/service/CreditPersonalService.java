@@ -28,10 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class CreditPersonalService {
-	
-	
-	
-	
+
 	private final String key="MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIGm7bNehbstkfG/fAcZnrA3UGHVWjCRkP3S3/ZfF456ypdRAaEeqGILT+wB139K1HZIUy/Gl8slGS9r6TR961MCAwEAAQ==";
 
 	private final String URL = "https://ds.handydata.cn/ds/service.ac";//翰迪征信接口地址
@@ -39,6 +36,7 @@ public class CreditPersonalService {
 	private final String application ="GwBiz.Req";//应用名称
 
 	private final String  version ="1.0.0";//当前版本取值
+	
 	private final String  transCode ="300618";//固定交易代码
 	
 	/**
@@ -100,7 +98,7 @@ public class CreditPersonalService {
 				byte[] reponseByte = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
 				String reponseXml = new String(reponseByte, "utf-8");
 				log.info("3DES(报文)" + reponseXml);
-				log.info("MD5(报文)" + new String(Base64Utils.encode(Md5Utils.md5ToHexStr(reponseXml).getBytes("utf-8"))));
+				//log.info("MD5(报文)" + new String(Base64Utils.encode(Md5Utils.md5ToHexStr(reponseXml).getBytes("utf-8"))));
 				return reponseXml;
 			}
 		}else {

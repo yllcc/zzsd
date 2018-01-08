@@ -10,34 +10,35 @@ import java.util.List;
 
 public class CallBackCustomerScoreModel implements Serializable {
 	private static final long serialVersionUID = 1221024932905963095L;
-	private String  txTime;//请求时间
-	private String  serialNo; //请求流水号
-	private String  platformNo;//平台编码
-	private String  token; //口令
+	private String  reqTime;//请求时间
+	private String  flowno; //请求流水号
+	private String  accesstoken;//平台编码
+	private String  signed; //口令
 	private List<CallBackCustomerScoreContentModel>  content;//请求内容
-	public String getTxTime() {
-		return txTime;
+	
+	public String getReqTime() {
+		return reqTime;
 	}
-	public void setTxTime(String txTime) {
-		this.txTime = txTime;
+	public void setReqTime(String reqTime) {
+		this.reqTime = reqTime;
 	}
-	public String getSerialNo() {
-		return serialNo;
+	public String getFlowno() {
+		return flowno;
 	}
-	public void setSerialNo(String serialNo) {
-		this.serialNo = serialNo;
+	public void setFlowno(String flowno) {
+		this.flowno = flowno;
 	}
-	public String getPlatformNo() {
-		return platformNo;
+	public String getAccesstoken() {
+		return accesstoken;
 	}
-	public void setPlatformNo(String platformNo) {
-		this.platformNo = platformNo;
+	public void setAccesstoken(String accesstoken) {
+		this.accesstoken = accesstoken;
 	}
-	public String getToken() {
-		return token;
+	public String getSigned() {
+		return signed;
 	}
-	public void setToken(String token) {
-		this.token = token;
+	public void setSigned(String signed) {
+		this.signed = signed;
 	}
 	public List<CallBackCustomerScoreContentModel> getContent() {
 		return content;
