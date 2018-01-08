@@ -64,7 +64,7 @@ public class BankCredit {
 	private String  applyPerson;//申请人
 	@Column(name="ATTRIBUTES1")
 	private String  attributes1;//字段1
-	@Column(name="ATTRIBUTES1")
+	@Column(name="ATTRIBUTES2")
 	private String  attributes2;//字段2
 
 
