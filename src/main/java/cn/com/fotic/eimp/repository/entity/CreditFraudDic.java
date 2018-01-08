@@ -50,7 +50,7 @@ public class CreditFraudDic {
 	@Column(name="ADDRESS")
 	private String address;// 地址
 	@Column(name="APPLY_TIME")
-	private Date appltTime;// 申请时间
+	private Date applyTime;// 申请时间
 	@Column(name="APPLY_PERSON")
 	private String appltPerson;// 申请人
 	@Column(name="FRAUD_SCORE")
