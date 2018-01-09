@@ -182,22 +182,22 @@ public class VerificationUtils {
             //身份证地区编码错误。  
             return false;  
         }  
-        int TotalmulAiWi = 0;  
-        for (int i = 0; i < 17; i++) {  
-            TotalmulAiWi = TotalmulAiWi + Integer.parseInt(String.valueOf(Ai.charAt(i))) * Integer.parseInt(Wi[i]);  
-        }  
-        int modValue = TotalmulAiWi % 11;  
-        String strVerifyCode = ValCodeArr[modValue];  
-        Ai = Ai + strVerifyCode;  
-  
-        if (IDStr.length() == 18) {  
-            if (Ai.equals(IDStr) == false) {  
-                //身份证无效，不是合法的身份证号码  
-                return false;  
-            }  
-        } else {  
-            return true;  
-        }  
+//        int TotalmulAiWi = 0;  
+//        for (int i = 0; i < 17; i++) {  
+//            TotalmulAiWi = TotalmulAiWi + Integer.parseInt(String.valueOf(Ai.charAt(i))) * Integer.parseInt(Wi[i]);  
+//        }  
+//        int modValue = TotalmulAiWi % 11;  
+//        String strVerifyCode = ValCodeArr[modValue];  
+//        Ai = Ai + strVerifyCode;  
+//  
+//        if (IDStr.length() == 18) {  
+//            if (Ai.equals(IDStr) == false) {  
+//                //身份证无效，不是合法的身份证号码  
+//                return false;  
+//            }  
+//        } else {  
+//            return true;  
+//        }  
         return true;  
     }
     
@@ -275,4 +275,7 @@ public class VerificationUtils {
             return false;  
         }  
     }  
+    public static void main(String[] args) {
+    	System.out.println(IDCardValidate("610121199902024697"));
+	}
 }
