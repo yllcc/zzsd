@@ -109,6 +109,7 @@ public class CreditPersonalService {
 			}
 		}else {
 			errormsg="未接收到返回信息";
+			log.info(errormsg);
 			return errormsg;
 		}
 	}

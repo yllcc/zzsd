@@ -92,7 +92,7 @@ public class CreditService {
 				boolean a = this.saveInformation(flowNo,businessNo, custName, idType, idNo, phoneNo);
 				if (a == true) {
 					// 查询征信数据库成功
-					log.info("发送韩迪成功");
+					log.info("征信发送韩迪成功");
 					customScore = "1000";
 					csc.setBusinessNo(businessNo);
 					csc.setCustomScoree(customScore);
@@ -101,7 +101,7 @@ public class CreditService {
 					cs.getContent().get(0).getCustomScore();
 				} else {
 					// 查询韩迪
-					log.info("入库成功");
+					log.info("征信入库成功");
 					customScore = "10000";
 				}
 			} catch (Exception e) {
@@ -360,11 +360,10 @@ public class CreditService {
 		user.setPhoneNo(phoneNo);
 		String xml = creditPersonalService.getCreditRequestXml(user);
 		String returnxml = creditPersonalService.sendHdCredit(xml);
-		log.info("翰迪返回征信：" + returnxml);
+		log.info("征信翰迪返回征信：" + returnxml);
 		HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
 		String istargeted=hm.getResData().getIs_targeted();
-		CreditPersonalDic cpd=new CreditPersonalDic();
-		
+		CreditPersonalDic cpd=new CreditPersonalDic();		
 		if("TRUE".equals(istargeted)){
 			String isTargeted="1";
 			cpd.setIsTargert(isTargeted);
@@ -372,9 +371,7 @@ public class CreditService {
 			String isTargeted="2";
 			cpd.setIsTargert(isTargeted);
 		}
-		
-		if ("0000".equals(hm.getResCode())) {
-			
+		if ("0000".equals(hm.getResCode())) {			
 			cpd.setApplyNum(businessNo);
 			cpd.setSerialNo(flowNo);
 			cpd.setBusinessNo(businessNo);
@@ -389,13 +386,8 @@ public class CreditService {
 			cpd.setPerformanceIndex(hm.getResData().getPerformanceIndex());
 			cpd.setResonableConsuming(hm.getResData().getResonableConsuming());
 			cpd.setCity(hm.getResData().getCity());
-			//cpd.setCityStability(hm.getResData().getci);
-			//cpd.setOnlineBuy(hm.getResData());
 			cpd.setComsumSocial(hm.getResData().getComsumingSocial());
 			cpd.setIncome(hm.getResData().getIncomming());
-			//cpd.setRiskPeriodConsume(hm.getResData().getriskPeriodConsume);
-			//cpd.setRiskCategoryComsume(hm.getResData().getriskCategoryComsume);
-			//cpd.setWorkTimeShop(hm.getResData().getworkTimeShop);
 			cpd.setCellPhone_preference(hm.getResData().getCellphonePreference());
 			cpd.setEcommerceActiveness(hm.getResData().getEcommerceActiveness());
 			cpd.setEcommerceAddressStability(hm.getResData().getEcommerceAddressStability());
@@ -404,14 +396,11 @@ public class CreditService {
 			cpd.setCashPreference(hm.getResData().getCellphonePreference());
 			cpd.setRiskPeriodPayment(hm.getResData().getRiskPeriodPayment());
 			cpd.setRiskCategoryPayment(hm.getResData().getRiskCategoryPayment());
-			//cpd.setBankCardStability(hm.getResData().getb);
-			//cpd.setBankCardActiveness(hm.getResData().getXankCardActiveness);
-			//cpd.setBankCardHistory(hm.getResData().getb);
-		
-			
 			cpd.setResponseBody(returnxml);	
 			creditPersonalRepository.save(cpd);
-			log.info("成功");
+			log.info("征信韩迪返回入库成功");
+		}else {
+			log.info("征信韩迪征信返回的错误代码,错误信息："+hm.getResCode(),hm.getResMsg());
 		}
 		return hm;
 	}
@@ -435,11 +424,17 @@ public class CreditService {
 		if (null == cm ) {
 			HdCreditScoreModel returnxml = this.sendHdPost(flowNo,businessNo, cust_name, cert_type, cert_num, phoneNo);
 			// 查询韩迪返回的数据进行解析评分
+			
+			
+			
 			log.info("-------------------------------------------");
 			return true;
 		} else {
 			this.savecredit(cm);
 			//// 查询人行的数据的数据进行解析评分
+			
+			
+			
 			log.info("-------------------------------------------");
 			return false;
 		}
@@ -450,7 +445,7 @@ public class CreditService {
 	 * @param json
 	 */
 	public void creditCallBack(String json) {
-		log.info("信贷回调征信接口" + json);
+		log.info("信贷回调征信接口：" + json);
 		this.callBackCredit(json);
 	}
 	  /**
@@ -485,7 +480,7 @@ public class CreditService {
 					sb.append(lines);
 				}
 				String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
-				log.info(callBackCredit);
+				log.info("信贷征信回调成功,返回:"+callBackCredit);
 				reader.close();
 				// 断开连接
 				connection.disconnect();

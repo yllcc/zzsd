@@ -57,7 +57,7 @@ public class CustomerScoreController {
 	@JmsListener(destination = "${queue.archiveBuffer.destination}", concurrency = "${queue.archiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String reqSerial) {
 		String json = redisTemplate.opsForValue().get(reqSerial);
-		log.info("流水号:" + reqSerial + "JSON数据:" + json);
+		log.info("征信流水号:" + reqSerial + "JSON数据:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -88,6 +88,7 @@ public class CustomerScoreController {
 	public void processQueueConsumer(String businessNo) {
 
 		String json = redisTemplate.opsForValue().get(businessNo);
+		log.info("征信需要进行处理的单条记录:" + json);
 		CallBackCustomerScoreModel cm = creditService.creditContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
 		redisTemplate.opsForValue().set(businessNo, callbackjson);
@@ -100,7 +101,7 @@ public class CustomerScoreController {
 		// 回调信贷
 		creditService.creditCallBack(content);
 		redisTemplate.delete(businessNo);
-		log.info(businessNo + "结束处理完成，已从redis队列删除");
+		log.info(businessNo + "征信结束处理完成，已从redis队列删除");
 	}
 
 	@RequestMapping(value = "/customerScore")

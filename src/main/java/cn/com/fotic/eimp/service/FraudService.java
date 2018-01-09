@@ -157,6 +157,7 @@ public class FraudService {
 		hd.setWifiMac("");
 		hd.setMac("");
 		String xmlReq = JaxbUtil.convertToXml(hd);
+		log.info("韩迪反欺诈xml:"+xmlReq);
 		return xmlReq;
 	}
 
@@ -211,7 +212,7 @@ public class FraudService {
 				sb.append(lines);
 			}
 			String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
-			log.info(callBackCredit);
+			log.info("信贷反欺诈回调成功,返回:"+callBackCredit);
 			reader.close();
 			// 断开连接
 			connection.disconnect();
