@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import cn.com.fotic.eimp.model.HdCreditRequestModel;
@@ -29,16 +30,21 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CreditPersonalService {
 
-	private final String key="MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIGm7bNehbstkfG/fAcZnrA3UGHVWjCRkP3S3/ZfF456ypdRAaEeqGILT+wB139K1HZIUy/Gl8slGS9r6TR961MCAwEAAQ==";
-
-	private final String URL = "https://ds.handydata.cn/ds/service.ac";//翰迪征信接口地址
-	
-	private final String application ="GwBiz.Req";//应用名称
-
-	private final String  version ="1.0.0";//当前版本取值
-	
-	private final String  transCode ="300618";//固定交易代码
-	
+ 	@Value("${hd.url}") 
+ 	private String URL;
+ 	
+    @Value("${hd.publicKey}")
+    private String key;
+    //当前版本取值
+    @Value("${hd.fraud.version}") 
+    private String version;
+    //应用名称
+    @Value("${hd.creditPersonal.application}")
+    private String application;
+    //固定交易代码
+    @Value("${hd.creditPersonal.transCode}")
+    private String transCode;
+    
 	/**
 	 * 获取请求翰迪征信xml
 	 * @param UserCreditQueneModel
