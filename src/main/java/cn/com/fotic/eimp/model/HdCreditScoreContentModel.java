@@ -33,6 +33,10 @@ public class HdCreditScoreContentModel{
     private String riskPeriodPayment;
    
     private String riskCategoryPayment;
+    
+    private String target_lev;
+    
+    private String field;
  
     private String is_targeted;
 
@@ -170,6 +174,22 @@ public class HdCreditScoreContentModel{
 
 	public void setRiskCategoryPayment(String riskCategoryPayment) {
 		this.riskCategoryPayment = riskCategoryPayment;
+	}
+	
+	public String getTarget_lev() {
+		return target_lev;
+	}
+
+	public void setTarget_lev(String target_lev) {
+		this.target_lev = target_lev;
+	}
+
+	public String getField() {
+		return field;
+	}
+
+	public void setField(String field) {
+		this.field = field;
 	}
 
 	public String getIs_targeted() {

@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 自主审贷反欺诈服务
+ * 
  * @author liugj
  *
  */
@@ -45,83 +46,84 @@ public class FraudService {
 	@Autowired
 	private CreditFraudRepository creditFraudRepository;
 
-	  @Value("${hd.fraud.channelId}") private  String channelId;// 渠道号
+	@Value("${hd.fraud.channelId}")
+	private String channelId;// 渠道号
 
-	  @Value("${hd.fraud.application}")private String application;// 应用名称
+	@Value("${hd.fraud.application}")
+	private String application;// 应用名称
 
-	  @Value("${hd.fraud.version}")private String version;// 当前版本取值
+	@Value("${hd.fraud.version}")
+	private String version;// 当前版本取值
 
-	  @Value("${hd.fraud.transCode}")private  String transCode;// 固定交易代码
+	@Value("${hd.fraud.transCode}")
+	private String transCode;// 固定交易代码
 
-	  @Value("${hd.fraud.LinkedMerchantId}")private  String LinkedMerchantId;// 商户ID
+	@Value("${hd.fraud.LinkedMerchantId}")
+	private String LinkedMerchantId;// 商户ID
 
-	  @Value("${hd.fraud.ProductItemCode}")private  String ProductItemCode;// 产品子项
-	
-	  @Value("${xd.fraudurl}")private String fraudUrl;// 回调反欺诈URL
+	@Value("${hd.fraud.ProductItemCode}")
+	private String ProductItemCode;// 产品子项
 
+	@Value("${xd.fraudurl}")
+	private String fraudUrl;// 回调反欺诈URL
 
-/*	public CallBackUserCreditModel fraudService(String fraudjson) {
+	/**
+	 * 信贷反欺诈入口
+	 * 
+	 * @param fraudjson
+	 * @return
+	 */
+	public CallBackUserCreditModel fraudContentService(String creditjson) {
+		CallBackUserCreditModel cs = new CallBackUserCreditModel();
+		CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
+		List<CallBackUserCreditContentModel> csclist = new ArrayList<CallBackUserCreditContentModel>();
+		UserCreditQueneModel user = JaxbUtil.readValue(creditjson, UserCreditQueneModel.class);
+		String flowNo = user.getFlowNo();
+		String businessNo = user.getBusinessNo();
+		String idType = user.getIdType();
+		String idNo = user.getIdNo();
+		String custName = user.getCustName();
+		String phoneNo = user.getPhoneNo();
+		String accessToken = user.getAccessToken();
 
-		CallBackUserCreditModel cm = new CallBackUserCreditModel();
-		List<CallBackUserCreditContentModel> reclist = new ArrayList<CallBackUserCreditContentModel>();
-		JSONObject jsonObject = JSON.parseObject(fraudjson);
-		String token = jsonObject.getString("token");
-		String flowno = jsonObject.getString("flowno");
-		String accesstoken = jsonObject.getString("accesstoken");
-		String reqTime = jsonObject.getString("reqTime");
-		// 判断是否存在content
-		if (jsonObject.containsKey("content")) {
-			String value = jsonObject.getString("content");
-			List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
-			for (UserCreditContentModel user : contentList) {
-				CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
-				String businessNo = user.getBusinessNo();
-				String idNo = user.getIdNo();
-				String idType = user.getIdType();
-				String custName = user.getCustName();
-				String phone = user.getPhoneNo();
-				String fraudScore = "";
-				// 1.生成xml
-				String xml = this.HdFraudService(idNo, custName);
-				// 2.进行数据加密,发送数据给韩迪
-				try {
-					HdCreditReturnModel r = creditService.hdCreditService(xml);
-					if (r.getResCode().equals("0000")) {
-						// 韩迪返回查询成功信息
-						CreditFraudDic cpd = new CreditFraudDic();
-						fraudScore = r.getData().get(0).getScore();
-						cpd.setFraudNum(flowno);
-						cpd.setBusinessNo(businessNo);
-						cpd.setApplyTime(new Date());
-						cpd.setCustName(custName);
-						cpd.setCertType(idType);
-						cpd.setCertNum(idNo);
-						cpd.setPhone(phone);
-						cpd.setFraudScore(fraudScore);
-						cpd.setFraudNum(businessNo);
-						fraudScore = r.getData().get(0).getScore();
-						// 将反欺诈分数入库
-						this.fraudScoreSave(cpd);
-						log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
-					} else {
-						// 韩迪返回查询错误信息
-						log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+		// 1.生成xml
+		String xml = this.HdFraudService(idNo, custName);
+		// 2.进行数据加密,发送数据给韩迪
+		try {
+			HdCreditReturnModel r = creditService.hdCreditService(xml);
+			if ("0000".equals(r.getResCode())) {
+				// 韩迪返回查询成功信息
+				CreditFraudDic cpd = new CreditFraudDic();
+				String fraudScore = r.getData().get(0).getScore();
+				cpd.setFraudNum(flowNo);
+				cpd.setBusinessNo(businessNo);
+				cpd.setApplyTime(new Date());
+				cpd.setCustName(custName);
+				cpd.setCertType(idType);
+				cpd.setCertNum(idNo);
+				cpd.setPhone(phoneNo);
+				cpd.setFraudScore(fraudScore);
+				cpd.setFraudNum(businessNo);
+				// 将反欺诈分数入库
+				this.fraudScoreSave(cpd);
 				csc.setBusinessNo(businessNo);
 				csc.setFraudScore(fraudScore);
-				reclist.add(csc);
+				csclist.add(csc);
+				log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
+			} else {
+				// 韩迪返回查询错误信息
+				log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
 			}
-			cm.setContent(reclist);
-			cm.setAccesstoken(accesstoken);
-			cm.setReqTime(reqTime);
-			cm.setFlowno(flowno);	
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		return cm;
-	}*/
+		cs.setAccessToken(accessToken);
+		cs.setReqTime(user.getReqTime());
+		cs.setFlowNo(user.getFlowNo());
+		cs.setContent(csclist);
+		return cs;
+	}
 
 	/**
 	 * 调用翰迪接口,反欺诈 1.生成xml
@@ -175,11 +177,13 @@ public class FraudService {
 	public void fraudScoreSave(CreditFraudDic cpd) {
 		creditFraudRepository.save(cpd);
 	}
-   /**
-    * 业务处理成功回调信贷
-    * @param fraudUrl
-    * @param json
-    */
+
+	/**
+	 * 业务处理成功回调信贷
+	 * 
+	 * @param fraudUrl
+	 * @param json
+	 */
 	public void callBackFraud(String json) {
 		try {
 			// 创建连接
@@ -215,58 +219,4 @@ public class FraudService {
 			e.printStackTrace();
 		}
 	}
-	/**
-	 * 信贷反欺诈入口
-	 * 
-	 * @param fraudjson
-	 * @return
-	 */
-	  public	CallBackUserCreditModel fraudContentService(String creditjson) {
-		    CallBackUserCreditModel  cs=new CallBackUserCreditModel();
-	    	CallBackUserCreditContentModel csc=new CallBackUserCreditContentModel();
-	    	List <CallBackUserCreditContentModel> csclist=new ArrayList <CallBackUserCreditContentModel>();
-	    	UserCreditQueneModel user = JaxbUtil.readValue(creditjson, UserCreditQueneModel.class);
-	    	String flowno=user.getFlowno();
-			String businessNo =  user.getBusinessNo();
-			String idType =  user.getIdType();
-			String idNo =  user.getIdNo();
-			String custName =  user.getCustName();
-			String phoneNo = user.getPhoneNo();
-			String fraudScore = "";
-			// 1.生成xml
-			String xml = this.HdFraudService(idNo, custName);
-			// 2.进行数据加密,发送数据给韩迪
-			try {
-				HdCreditReturnModel r = creditService.hdCreditService(xml);
-				if ("0000"==r.getResCode()) {
-					// 韩迪返回查询成功信息
-					CreditFraudDic cpd = new CreditFraudDic();
-					fraudScore = r.getData().get(0).getScore();
-					cpd.setFraudNum(flowno);
-					cpd.setBusinessNo(businessNo);
-					cpd.setApplyTime(new Date());
-					cpd.setCustName(custName);
-					cpd.setCertType(idType);
-					cpd.setCertNum(idNo);
-					cpd.setPhone(phoneNo);
-					cpd.setFraudScore(fraudScore);
-					cpd.setFraudNum(businessNo);
-					fraudScore = r.getData().get(0).getScore();
-					// 将反欺诈分数入库
-					this.fraudScoreSave(cpd);
-					log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
-				} else {
-					// 韩迪返回查询错误信息
-					log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			cs.setAccesstoken(user.getAccesstoken());
-			cs.setReqTime(user.getReqTime());
-			cs.setFlowno(user.getFlowno());	
-			return cs;	    	
-	    }
-
 }

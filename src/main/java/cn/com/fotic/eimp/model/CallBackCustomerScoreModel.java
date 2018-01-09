@@ -11,8 +11,8 @@ import java.util.List;
 public class CallBackCustomerScoreModel implements Serializable {
 	private static final long serialVersionUID = 1221024932905963095L;
 	private String  reqTime;//请求时间
-	private String  flowno; //请求流水号
-	private String  accesstoken;//平台编码
+	private String  flowNo; //请求流水号
+	private String  accessToken;//平台编码
 	private String  signed; //口令
 	private List<CallBackCustomerScoreContentModel>  content;//请求内容
 	
@@ -22,17 +22,18 @@ public class CallBackCustomerScoreModel implements Serializable {
 	public void setReqTime(String reqTime) {
 		this.reqTime = reqTime;
 	}
-	public String getFlowno() {
-		return flowno;
+	
+	public String getFlowNo() {
+		return flowNo;
 	}
-	public void setFlowno(String flowno) {
-		this.flowno = flowno;
+	public void setFlowNo(String flowNo) {
+		this.flowNo = flowNo;
 	}
-	public String getAccesstoken() {
-		return accesstoken;
+	public String getAccessToken() {
+		return accessToken;
 	}
-	public void setAccesstoken(String accesstoken) {
-		this.accesstoken = accesstoken;
+	public void setAccessToken(String accessToken) {
+		this.accessToken = accessToken;
 	}
 	public String getSigned() {
 		return signed;

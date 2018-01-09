@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class ArchiveFlowController {
 
-	@Autowired
+	/*@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
 	@Autowired
 	private StringRedisTemplate redisTemplate;
@@ -64,5 +64,5 @@ public class ArchiveFlowController {
 
 		redisTemplate.delete(reqSerial);
 		log.info(reqSerial+"处理完成，已从redis队列删除");
-	}
+	}*/
 }

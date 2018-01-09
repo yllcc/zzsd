@@ -1,14 +1,12 @@
 package cn.com.fotic.eimp.archive;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.jms.Queue;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsMessagingTemplate;
@@ -18,11 +16,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-
-import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
-import cn.com.fotic.eimp.model.UserCreditModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.model.UserCreditReturnModel;
 import cn.com.fotic.eimp.service.CreditService;
@@ -64,8 +59,8 @@ public class CustomerScoreController {
 		String json = redisTemplate.opsForValue().get(reqSerial);
 		log.info("流水号:" + reqSerial + "JSON数据:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
-		String flowno = jsonObject.getString("flowno");
-		String accesstoken = jsonObject.getString("accesstoken");
+		String flowNo = jsonObject.getString("flowNo");
+		String accessToken = jsonObject.getString("accessToken");
 		String reqTime = jsonObject.getString("reqTime");
 		if (jsonObject.containsKey("content")) {
 			String value = jsonObject.getString("content");
@@ -77,8 +72,8 @@ public class CustomerScoreController {
 				user.setIdNo(userCredit.getIdNo());
 				user.setIdType(userCredit.getIdType());
 				user.setPhoneNo(userCredit.getPhoneNo());
-				user.setAccesstoken(accesstoken);
-				user.setFlowno(flowno);
+				user.setAccessToken(accessToken);
+				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
 				String businessNo = userCredit.getBusinessNo();
@@ -86,7 +81,7 @@ public class CustomerScoreController {
 				jmsMessagingTemplate.convertAndSend(archiveProcessQueue, businessNo);
 			}
 		}
-		redisTemplate.delete(reqSerial);
+		// redisTemplate.delete(reqSerial);
 	}
 
 	@JmsListener(destination = "${queue.archiveProcess.destination}", concurrency = "${queue.archiveProcess.concurrency}")
@@ -114,6 +109,7 @@ public class CustomerScoreController {
 		// 1.校验数据
 		String requestParam = creditService.longinHttep(request);
 		UserCreditReturnModel um = creditService.verificationCredit(requestParam);
+
 		// 2.获取流水号
 		String serialNo = creditService.flownNo(requestParam);
 		// 3.返回队列(JSON,流水号)

@@ -1,7 +1,9 @@
 package cn.com.fotic.eimp.archive;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.jms.Queue;
 import javax.servlet.http.HttpServletRequest;
@@ -62,8 +64,8 @@ public class FraudController {
 		String json = fraudRedisTemplate.opsForValue().get(reqSerial);
 		log.info("流水号:" + reqSerial + "JSON数据:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
-		String flowno = jsonObject.getString("flowno");
-		String accesstoken = jsonObject.getString("accesstoken");
+		String flowNo = jsonObject.getString("flowNo");
+		String accessToken = jsonObject.getString("accessToken");
 		String reqTime = jsonObject.getString("reqTime");
 		if (jsonObject.containsKey("content")) {
 			String value = jsonObject.getString("content");
@@ -75,16 +77,18 @@ public class FraudController {
 				user.setIdNo(userCredit.getIdNo());
 				user.setIdType(userCredit.getIdType());
 				user.setPhoneNo(userCredit.getPhoneNo());
-				user.setAccesstoken(accesstoken);
-				user.setFlowno(flowno);
+				user.setAccessToken(accessToken);
+				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
 				String businessNo = userCredit.getBusinessNo();
 				fraudRedisTemplate.opsForValue().set(businessNo, processJson);
+				log.info("111" + processJson);
+				log.info("222" + businessNo);
 				fraudJmsMessagingTemplate.convertAndSend(fraudArchiveProcessQueue, businessNo);
 			}
 		}
-		fraudRedisTemplate.delete(reqSerial);
+		// fraudRedisTemplate.delete(reqSerial);
 	}
 
 	@JmsListener(destination = "${queue.fraudArchiveProcess.destination}", concurrency = "${queue.fraudArchiveProcess.concurrency}")
@@ -113,15 +117,16 @@ public class FraudController {
 	@RequestMapping(value = "/independentAudit")
 	@ResponseBody
 	private UserCreditReturnModel independentAudit(HttpServletRequest request) throws IOException {
-		// 1.接收信贷http请求
+		// 1.校验数据
 		String requestJson = creditService.longinHttep(request);
-		// 2.校验数据
 		UserCreditReturnModel um = creditService.verificationCredit(requestJson);
-		// 3.获取流水号
-		String flowno = creditService.flownNo(requestJson);
-		// 4.返回队列(JSON,流水号)
-		fraudRedisTemplate.opsForValue().set(flowno, requestJson);
-		fraudJmsMessagingTemplate.convertAndSend(fraudArchiveBufferQueue, flowno);
+		if ("01" == um.getReCode()) {
+			// 2.获取流水号
+			String flowno = creditService.flownNo(requestJson);
+			// 3.返回队列(JSON,流水号)
+			fraudRedisTemplate.opsForValue().set(flowno, requestJson);
+			fraudJmsMessagingTemplate.convertAndSend(fraudArchiveBufferQueue, flowno);
+		}
 		return um;
 	}
 }
