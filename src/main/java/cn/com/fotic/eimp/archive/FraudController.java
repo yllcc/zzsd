@@ -62,7 +62,7 @@ public class FraudController {
 	@JmsListener(destination = "${queue.fraudArchiveBuffer.destination}", concurrency = "${queue.fraudArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String reqSerial) {
 		String json = fraudRedisTemplate.opsForValue().get(reqSerial);
-		log.info("反欺诈流水号:" + reqSerial + "JSON数据:" + json);
+		log.info("进入队列的反欺诈流水号:" + reqSerial + "JSON数据:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");

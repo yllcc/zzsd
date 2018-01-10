@@ -32,18 +32,18 @@ public class QueueConfig {
     }
     
     @Bean
-    public Queue archiveBufferQueue(){
-        return new ActiveMQQueue(queueProperties.getDestination("archiveBuffer"));
+    public Queue creditArchiveBufferQueue(){
+        return new ActiveMQQueue(queueProperties.getDestination("creditArchiveBuffer"));
     }
 
     @Bean
-    public Queue archiveProcessQueue(){
-        return new ActiveMQQueue(queueProperties.getDestination("archiveProcess"));
+    public Queue creditArchiveProcessQueue(){
+        return new ActiveMQQueue(queueProperties.getDestination("creditArchiveProcess"));
     }
 
     @Bean
-    public Queue archiveCallbackQueue(){
-        return new ActiveMQQueue(queueProperties.getDestination("archiveCallback"));
+    public Queue creditArchiveCallbackQueue(){
+        return new ActiveMQQueue(queueProperties.getDestination("creditArchiveCallback"));
     }
     
     

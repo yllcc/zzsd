@@ -37,27 +37,27 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomerScoreController {
 
 	@Autowired
-	private JmsMessagingTemplate jmsMessagingTemplate;
+	private JmsMessagingTemplate creditJmsMessagingTemplate;
 
 	@Autowired
-	private StringRedisTemplate redisTemplate;
+	private StringRedisTemplate creditRedisTemplate;
 
 	@Autowired
-	private Queue archiveBufferQueue;
+	private Queue creditArchiveBufferQueue;
 
 	@Autowired
-	private Queue archiveProcessQueue;
+	private Queue creditArchiveProcessQueue;
 
 	@Autowired
-	private Queue archiveCallbackQueue;
+	private Queue creditArchiveCallbackQueue;
 
 	@Autowired
 	private CreditService creditService;
 
-	@JmsListener(destination = "${queue.archiveBuffer.destination}", concurrency = "${queue.archiveBuffer.concurrency}")
+	@JmsListener(destination = "${queue.creditArchiveBuffer.destination}", concurrency = "${queue.creditArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String reqSerial) {
-		String json = redisTemplate.opsForValue().get(reqSerial);
-		log.info("征信流水号:" + reqSerial + "JSON数据:" + json);
+		String json = creditRedisTemplate.opsForValue().get(reqSerial);
+		log.info("进入队列的征信流水号:" + reqSerial + "JSON数据:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -77,30 +77,30 @@ public class CustomerScoreController {
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
 				String businessNo = userCredit.getBusinessNo();
-				redisTemplate.opsForValue().set(businessNo, processJson);
-				jmsMessagingTemplate.convertAndSend(archiveProcessQueue, businessNo);
+				creditRedisTemplate.opsForValue().set(businessNo, processJson);
+				creditJmsMessagingTemplate.convertAndSend(creditArchiveProcessQueue, businessNo);
 			}
 		}
 		// redisTemplate.delete(reqSerial);
 	}
 
-	@JmsListener(destination = "${queue.archiveProcess.destination}", concurrency = "${queue.archiveProcess.concurrency}")
+	@JmsListener(destination = "${queue.creditArchiveProcess.destination}", concurrency = "${queue.creditArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
 
-		String json = redisTemplate.opsForValue().get(businessNo);
+		String json = creditRedisTemplate.opsForValue().get(businessNo);
 		log.info("征信需要进行处理的单条记录:" + json);
 		CallBackCustomerScoreModel cm = creditService.creditContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
-		redisTemplate.opsForValue().set(businessNo, callbackjson);
-		jmsMessagingTemplate.convertAndSend(archiveCallbackQueue, businessNo);
+		creditRedisTemplate.opsForValue().set(businessNo, callbackjson);
+		creditJmsMessagingTemplate.convertAndSend(creditArchiveCallbackQueue, businessNo);
 	}
 
-	@JmsListener(destination = "${queue.archiveCallback.destination}", concurrency = "${queue.archiveCallback.concurrency}")
+	@JmsListener(destination = "${queue.creditArchiveCallback.destination}", concurrency = "${queue.creditArchiveCallback.concurrency}")
 	public void callbackQueueConsumer(String businessNo) {
-		String content = redisTemplate.opsForValue().get(businessNo);
+		String content =creditRedisTemplate.opsForValue().get(businessNo);
 		// 回调信贷
 		creditService.creditCallBack(content);
-		redisTemplate.delete(businessNo);
+		creditRedisTemplate.delete(businessNo);
 		log.info(businessNo + "征信结束处理完成，已从redis队列删除");
 	}
 
@@ -110,12 +110,11 @@ public class CustomerScoreController {
 		// 1.校验数据
 		String requestParam = creditService.longinHttep(request);
 		UserCreditReturnModel um = creditService.verificationCredit(requestParam);
-
 		// 2.获取流水号
 		String serialNo = creditService.flownNo(requestParam);
-		// 3.返回队列(JSON,流水号)
-		redisTemplate.opsForValue().set(serialNo, requestParam);
-		jmsMessagingTemplate.convertAndSend(archiveBufferQueue, serialNo);
+		// 3.返回队列(JSON,流水号)	
+		creditRedisTemplate.opsForValue().set(serialNo, requestParam);
+		creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, serialNo);	
 		return um;
 	}
 }
