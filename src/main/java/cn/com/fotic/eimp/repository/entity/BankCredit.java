@@ -30,9 +30,9 @@ public class BankCredit {
 	private String  serialNo;//流水号
 	@Column(name="CUST_NAME")
 	private String  custName   ;//客户名称'
-	@Column(name="CUST_Type")
+	@Column(name="CERT_TYPE")
 	private String  certType  ;//证件类型
-	@Column(name="CUST_NUM")
+	@Column(name="CERT_NUM")
 	private String  certNum  ;//证件号码
 	@Column(name="RATE_CREDITCARD_APPROVAL_COUNT")
 	private String  rateCreditcardApprovalCont;//'信用卡审批次数
