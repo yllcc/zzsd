@@ -1,6 +1,10 @@
 package cn.com.fotic.eimp.model;
 
-
+/**
+ * 
+ * @author liugj
+ *
+ */
 public class HdCreditScoreContentModel{
 
     private String score;

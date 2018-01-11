@@ -19,14 +19,12 @@ import org.springframework.stereotype.Service;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
-import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
-import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
+
 import cn.com.fotic.eimp.model.CallBackUserCreditContentModel;
 import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
-import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.primary.CreditFraudRepository;
 import cn.com.fotic.eimp.repository.entity.CreditFraudDic;
@@ -48,14 +46,11 @@ import lombok.extern.slf4j.Slf4j;
 public class FraudService {
 
 	@Autowired
-	private CreditService creditService;
-
-	@Autowired
 	private CreditFraudRepository creditFraudRepository;
 	
-	  @Value("${hd.url}") private String URL;
+	@Value("${hd.url}") private String URL;
 	   
-	  @Value("${hd.publicKey}") private String publicKey;
+	@Value("${hd.publicKey}") private String publicKey;
 
 	@Value("${hd.fraud.channelId}")
 	private String channelId;// 渠道号
@@ -213,7 +208,7 @@ public class FraudService {
 						r.setResultCode(data.getResultCode());
 						r.setItemId(data.getItemId());
 						r.setResMsg(data.getResMsg());
-						log.info("分数：" + data.getScore());
+						log.info("反欺诈分数：" + data.getScore());
 						list.add(r);
 					}
 					hrm.setData(list);

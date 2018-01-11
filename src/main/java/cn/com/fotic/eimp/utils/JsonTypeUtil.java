@@ -3,7 +3,11 @@ import org.springframework.util.StringUtils;
 
 import cn.com.fotic.eimp.model.JSON_TYPE;
 
-
+/**
+ * 
+ * @author liugj
+ *
+ */
 public class JsonTypeUtil {
 	public static JSON_TYPE getJsonType(String str){
 		if(StringUtils.isEmpty(str)){

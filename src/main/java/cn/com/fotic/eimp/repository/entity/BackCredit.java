@@ -8,9 +8,10 @@ import lombok.Data;
 import lombok.ToString;
 
 /**
- * 查询人行信息
+ * 查询人行视图
+ * @author liugj
+ *
  */
-
 @Data
 @ToString
 @Entity

@@ -4,6 +4,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
 
+
+/**
+ * 
+ * @author liugj
+ *
+ */
 @Configuration
 public class BeanTools implements ApplicationContextAware {
 	private static ApplicationContext applicationContext;

@@ -23,7 +23,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.persistence.EntityManager;  
 import javax.sql.DataSource;  
 import java.util.Map;  
-  
+/**
+ * 
+ * @author liugj
+ *
+ */ 
 @Configuration  
 @EnableTransactionManagement  
 @EnableJpaRepositories(  

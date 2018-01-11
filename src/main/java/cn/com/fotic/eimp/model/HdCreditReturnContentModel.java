@@ -7,8 +7,11 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
-
+/**
+ * 
+ * @author liugj
+ *
+ */
 public class HdCreditReturnContentModel implements Serializable {
 	private static final long serialVersionUID = 2690024932905963095L;
 	    private String resultCode;

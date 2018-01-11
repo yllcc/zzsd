@@ -5,18 +5,14 @@ import java.util.Date;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import cn.com.fotic.eimp.model.HdCreditRequestModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
-import cn.com.fotic.eimp.primary.CreditPersonalRepository;
-import cn.com.fotic.eimp.repository.entity.CreditPersonalDic;
 import cn.com.fotic.eimp.utils.Base64Utils;
 import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
-import cn.com.fotic.eimp.utils.Md5Utils;
 import cn.com.fotic.eimp.utils.RSAUtils;
 import cn.com.fotic.eimp.utils.ThreeDESUtils;
 import lombok.extern.slf4j.Slf4j;

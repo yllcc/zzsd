@@ -7,7 +7,11 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 //import org.eclipse.persistence.oxm.annotations.XmlCDATA;
-
+/**
+ * 
+ * @author liugj
+ *
+ */
 @XmlRootElement(name = "subatm")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class HdAntiFraudModel implements Serializable {

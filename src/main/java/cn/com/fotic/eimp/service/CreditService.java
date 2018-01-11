@@ -12,7 +12,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.DocumentException;
@@ -25,7 +24,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
-import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.HdCreditScoreModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
@@ -37,11 +35,8 @@ import cn.com.fotic.eimp.repository.entity.BackCredit;
 import cn.com.fotic.eimp.repository.entity.BankCredit;
 import cn.com.fotic.eimp.repository.entity.CreditPersonalDic;
 import cn.com.fotic.eimp.second.BackCreditRepository;
-import cn.com.fotic.eimp.utils.Base64Utils;
-import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
-import cn.com.fotic.eimp.utils.RSAUtils;
-import cn.com.fotic.eimp.utils.ThreeDESUtils;
+import cn.com.fotic.eimp.utils.SumUtil;
 import cn.com.fotic.eimp.utils.VerificationUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,36 +81,19 @@ public class CreditService {
 			String custName =  user.getCustName();
 			String phoneNo = user.getPhoneNo();
 			String flowNo=user.getFlowNo();
-			String customScore = "";
-			try {
-				boolean a = this.saveInformation(flowNo,businessNo, custName, idType, idNo, phoneNo);
-				if (a == true) {
-					// 查询征信数据库成功
-					log.info("征信发送韩迪成功");
-					customScore = "1000";
-					csc.setBusinessNo(businessNo);
-					csc.setCustomScoree(customScore);
-					csclist.add(csc);				
-					cs.setContent(csclist);
-					cs.getContent().get(0).getCustomScore();
-				} else {
-					// 查询韩迪
-					log.info("征信入库成功");
-					customScore = "10000";
-					csc.setBusinessNo(businessNo);
-					csc.setCustomScoree(customScore);
-					csclist.add(csc);				
-					cs.setContent(csclist);
-					cs.getContent().get(0).getCustomScore();
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}	
+		  try {
+			   String score = this.saveInformation(flowNo, businessNo, custName, idType, idNo, phoneNo);
+			   csc.setBusinessNo(businessNo);
+			   csc.setCustomScoree(score);
+			   csclist.add(csc);
+			   cs.setContent(csclist);
+		  } catch (Exception e) {
+			   // TODO Auto-generated catch block
+			   e.printStackTrace();
+		  }
 			cs.setAccessToken(user.getAccessToken());
 			cs.setReqTime(user.getReqTime());
 			cs.setFlowNo(user.getFlowNo());	
-			cs.setContent(csclist);
 			return cs;	
 	    }
 	/**
@@ -371,26 +349,23 @@ public class CreditService {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean saveInformation(String flowNo,String businessNo, String cust_name, String cert_type, String cert_num,
+	public String saveInformation(String flowNo,String businessNo, String cust_name, String cert_type, String cert_num,
 			String phoneNo) throws Exception {
 
 		BankCredit cm = this.creditOracle( businessNo, cust_name, cert_type, cert_num, phoneNo);
 		if (null == cm ) {
 			HdCreditScoreModel returnxml = this.sendHdPost(flowNo,businessNo, cust_name, cert_type, cert_num, phoneNo);
 			// 查询韩迪返回的数据进行解析评分
-			
-			
-			
-			log.info("-------------------------------------------");
-			return true;
+			String score=returnxml.getResData().getScore();
+			log.info("韩迪返回的分数："+score);
+			return score;
 		} else {
 			this.savecredit(cm);
-			//// 查询人行的数据的数据进行解析评分
-			
-			
-			
-			log.info("-------------------------------------------");
-			return false;
+			// 查询人行的数据的数据进行解析评分
+			int sum=SumUtil.countScore(cm);
+			String score=String.valueOf(sum);
+			log.info("人行返回的分数:"+score);
+			return score;
 		}
 	}
 	/**

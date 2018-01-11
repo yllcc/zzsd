@@ -1,5 +1,11 @@
 package cn.com.fotic.eimp.model;
 
+
+/**
+ * 
+ * @author liugj
+ *
+ */
 public class HdCreditScoreModel {
 
    

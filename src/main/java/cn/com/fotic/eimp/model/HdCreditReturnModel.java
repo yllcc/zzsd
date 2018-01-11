@@ -3,6 +3,11 @@ package cn.com.fotic.eimp.model;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * 
+ * @author liugj
+ *
+ */
 public class HdCreditReturnModel implements Serializable {
 	private static final long serialVersionUID = 2690024932905963095L;
 	private String resCode;

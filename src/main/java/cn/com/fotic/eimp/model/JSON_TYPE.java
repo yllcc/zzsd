@@ -1,5 +1,11 @@
 package cn.com.fotic.eimp.model;
 
+
+/**
+ * 
+ * @author liugj
+ *
+ */
 public enum JSON_TYPE {
 //	jsonObject
 	JSON_TYPE_OBJECT,

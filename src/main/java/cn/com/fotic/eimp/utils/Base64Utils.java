@@ -9,7 +9,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Base64;
 
-
+/**
+ * 
+ * @author liugj
+ *
+ */
 public class Base64Utils {
 	/** *//** 
      * 文件读取缓冲区大小 

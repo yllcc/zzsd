@@ -9,6 +9,12 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.jms.Queue;
 
+
+/** 
+ * 
+ * @author liugj
+ * 
+ */  
 @Configuration
 @EnableConfigurationProperties(QueueProperties.class)
 public class QueueConfig {
