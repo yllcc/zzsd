@@ -1,7 +1,9 @@
 package cn.com.fotic.eimp.utils;
 
 import cn.com.fotic.eimp.repository.entity.BankCredit;
+import cn.com.fotic.eimp.repository.entity.MaritalEducation;
 import cn.com.fotic.eimp.repository.entity.Score;
+import cn.com.fotic.eimp.repository.entity.SexEnum;
 
 public class SumUtil {
 
@@ -25,24 +27,32 @@ public class SumUtil {
 		String opencardLimit=Score.getScore(Score.opencardLimit, bankCredit.getRateRecentlyOpencardLimit());
 		//最早未销户贷记卡卡龄
 		String accountCardage=Score.getScore(Score.accountCardage, bankCredit.getRateFirstnoaccountCardage());
+		//性别
+		int sexScore=SexEnum.getSexScore(bankCredit.getRateRegister());
+		//学历婚姻
+		int meScore=MaritalEducation.getMaritalEducationScore(bankCredit);
+		System.out.println(meScore);
 		System.out.println(approvalCount+"&"+threeCount+"&"+loanopenRatio+"&"+firstendBal+"&"+
-		maxoverdueCount+"&"+accountCount+"&"+avenotusedlimitrat+"&"+opencardLimit+"&"+accountCardage);
+		maxoverdueCount+"&"+accountCount+"&"+avenotusedlimitrat+"&"+opencardLimit+"&"+accountCardage+"&"+sexScore+"&"+meScore);
 		
 		sumScore=Integer.valueOf(approvalCount)+Integer.valueOf(threeCount)+Integer.valueOf(loanopenRatio)+Integer.valueOf(firstendBal)+
 				Integer.valueOf(maxoverdueCount)+Integer.valueOf(accountCount)+Integer.valueOf(avenotusedlimitrat)
-				+Integer.valueOf(opencardLimit)+Integer.valueOf(accountCardage);
+				+Integer.valueOf(opencardLimit)+Integer.valueOf(accountCardage)+sexScore+meScore;
 		return sumScore;
 	}
+	
 	public static void main(String[] args) {
 		BankCredit bankCredit=new BankCredit();
 		bankCredit.setRateCreditcardApprovalCont("0");
-		bankCredit.setRateCreditreporCount("0");
+		bankCredit.setRateCreditreporCount("1");
 		bankCredit.setRateLoanoffLoanopenRatio("1.0");
 		bankCredit.setRateNoaccountFirstendBal("0");
 		bankCredit.setRateCreditAccountCount("9");
 		bankCredit.setRateNormalAvenotusedlimitrat("75.0");
 		bankCredit.setRateRecentlyOpencardLimit("80000");
 		bankCredit.setRateFirstnoaccountCardage("80");
+		bankCredit.setRateMaritalState("未婚");
+		bankCredit.setRateEduLevel("大学专科和专科学校（简称\"大专\"）");
 		System.out.println(countScore(bankCredit));
 	}
 }
