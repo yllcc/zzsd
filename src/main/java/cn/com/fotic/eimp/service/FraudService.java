@@ -11,6 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,12 +24,17 @@ import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
 import cn.com.fotic.eimp.model.CallBackUserCreditContentModel;
 import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
+import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.primary.CreditFraudRepository;
 import cn.com.fotic.eimp.repository.entity.CreditFraudDic;
+import cn.com.fotic.eimp.utils.Base64Utils;
+import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
+import cn.com.fotic.eimp.utils.RSAUtils;
+import cn.com.fotic.eimp.utils.ThreeDESUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -45,6 +52,10 @@ public class FraudService {
 
 	@Autowired
 	private CreditFraudRepository creditFraudRepository;
+	
+	  @Value("${hd.url}") private String URL;
+	   
+	  @Value("${hd.publicKey}") private String publicKey;
 
 	@Value("${hd.fraud.channelId}")
 	private String channelId;// 渠道号
@@ -88,9 +99,9 @@ public class FraudService {
 
 		// 1.生成xml
 		String xml = this.HdFraudService(idNo, custName);
-		// 2.进行数据加密,发送数据给韩迪
+		// 2.进行数据加密,发送数据给韩迪hd.fraud.channelId 
 		try {
-			HdCreditReturnModel r = creditService.hdCreditService(xml);
+			HdCreditReturnModel r = this.hdCreditService(xml);
 			if ("0000".equals(r.getResCode())) {
 				// 韩迪返回查询成功信息
 				CreditFraudDic cpd = new CreditFraudDic();
@@ -161,6 +172,63 @@ public class FraudService {
 		return xmlReq;
 	}
 
+	/**
+	 * 调用翰迪接口 加密请求数据
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public HdCreditReturnModel hdCreditService(String xml) throws Exception {
+		HdCreditReturnModel hrm = new HdCreditReturnModel();
+		String mkey = UUID.randomUUID().toString();
+		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
+		String strKey = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), publicKey);
+		String strxml = new String(
+				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
+		String returnXml = new String(Base64Utils.encode("11000000".getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
+		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
+		String xmlArr[] = reutrnResult.split("\\|");
+		if (xmlArr[0].equals("0")) {
+			String resMsg = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
+			hrm.setResMsg(resMsg);
+			return hrm;
+		} else {
+			byte[] b = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
+			String tradeXml = new String(b, "utf-8");
+			//log.info("333" + tradeXml);
+			JSONObject jsonObject = JSON.parseObject(tradeXml);
+			String resCode = jsonObject.getString("resCode");
+			String resMsg = jsonObject.getString("resMsg");
+			if (("0000").equals(resCode)) {
+				// 判断是否存在content
+				if (jsonObject.containsKey("data")) {
+					String value = jsonObject.getString("data");
+					JSON.parseArray(value, HdCreditReturnContentModel.class);
+					List<HdCreditReturnContentModel> contentList = JSON.parseArray(value,
+							HdCreditReturnContentModel.class);
+					List<HdCreditReturnContentModel> list = new ArrayList<HdCreditReturnContentModel>();
+					for (HdCreditReturnContentModel data : contentList) {
+						HdCreditReturnContentModel r = new HdCreditReturnContentModel();
+						r.setScore(data.getScore());
+						r.setResultCode(data.getResultCode());
+						r.setItemId(data.getItemId());
+						r.setResMsg(data.getResMsg());
+						log.info("分数：" + data.getScore());
+						list.add(r);
+					}
+					hrm.setData(list);
+					hrm.setResCode(resCode);
+					hrm.setResMsg(resMsg);
+				}
+			} else {
+				hrm.setResCode(resCode);
+				hrm.setResMsg(resMsg);
+			}
+			return hrm;
+		}
+	}
+
+	
 	/**
 	 * 回调反欺诈借口
 	 * 

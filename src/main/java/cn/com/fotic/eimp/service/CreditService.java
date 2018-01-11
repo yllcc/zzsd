@@ -53,10 +53,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class CreditService {
-	    @Value("${hd.url}") private String URL;
-	    @Value("${hd.publicKey}") private String publicKey;
-	    @Value("${hd.credit.channelId}") private String channelId;
-	    @Value("${xd.crediturl}") private String callbackcrediturl;
+	  
+	 @Value("${xd.crediturl}") private String callbackcrediturl;
+	  
 	@Autowired
 	private BackCreditRepository backCreditRepository;
 
@@ -103,6 +102,11 @@ public class CreditService {
 					// 查询韩迪
 					log.info("征信入库成功");
 					customScore = "10000";
+					csc.setBusinessNo(businessNo);
+					csc.setCustomScoree(customScore);
+					csclist.add(csc);				
+					cs.setContent(csclist);
+					cs.getContent().get(0).getCustomScore();
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -212,61 +216,6 @@ public class CreditService {
 		return flowNo;
 	}
 
-	/**
-	 * 调用翰迪接口 加密请求数据
-	 * 
-	 * @return
-	 * @throws Exception
-	 */
-	public HdCreditReturnModel hdCreditService(String xml) throws Exception {
-		HdCreditReturnModel hrm = new HdCreditReturnModel();
-		String mkey = UUID.randomUUID().toString();
-		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
-		String strKey = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), publicKey);
-		String strxml = new String(
-				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
-		String returnXml = new String(Base64Utils.encode(channelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
-		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
-		String xmlArr[] = reutrnResult.split("\\|");
-		if (xmlArr[0].equals("0")) {
-			String resMsg = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
-			hrm.setResMsg(resMsg);
-			return hrm;
-		} else {
-			byte[] b = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
-			String tradeXml = new String(b, "utf-8");
-			//log.info("333" + tradeXml);
-			JSONObject jsonObject = JSON.parseObject(tradeXml);
-			String resCode = jsonObject.getString("resCode");
-			String resMsg = jsonObject.getString("resMsg");
-			if (("0000").equals(resCode)) {
-				// 判断是否存在content
-				if (jsonObject.containsKey("data")) {
-					String value = jsonObject.getString("data");
-					JSON.parseArray(value, HdCreditReturnContentModel.class);
-					List<HdCreditReturnContentModel> contentList = JSON.parseArray(value,
-							HdCreditReturnContentModel.class);
-					List<HdCreditReturnContentModel> list = new ArrayList<HdCreditReturnContentModel>();
-					for (HdCreditReturnContentModel data : contentList) {
-						HdCreditReturnContentModel r = new HdCreditReturnContentModel();
-						r.setScore(data.getScore());
-						r.setResultCode(data.getResultCode());
-						r.setItemId(data.getItemId());
-						r.setResMsg(data.getResMsg());
-						log.info("分数：" + data.getScore());
-						list.add(r);
-					}
-					hrm.setData(list);
-					hrm.setResCode(resCode);
-					hrm.setResMsg(resMsg);
-				}
-			} else {
-				hrm.setResCode(resCode);
-				hrm.setResMsg(resMsg);
-			}
-			return hrm;
-		}
-	}
 
 	/**
 	 * xml 错误解析
@@ -318,7 +267,12 @@ public class CreditService {
 			um.setRateEduLevel(cm.getRate_edu_level());
 			um.setRateFirstnoaccountCardage(cm.getRate_firstnoaccount_cardage());
 			um.setRateFiveyearMaxoverdueCount(cm.getRate_fiveyear_maxoverdue_count());
-			um.setRateLoanoffLoanopenRatio(cm.getRate_loanoff_loanopen_ratio());
+			String rllr=cm.getRate_loanoff_loanopen_ratio();
+			if("NaN".equals(rllr)) {
+				um.setRateLoanoffLoanopenRatio("0");
+			}else {
+			    um.setRateLoanoffLoanopenRatio(rllr);
+			}
 			um.setRateMaritalState(cm.getRate_marital_state());
 			um.setRateNoaccountFirstendBal(cm.getRate_noaccount_firstend_bal());
 			um.setRateNormalAvenotusedlimitrat(cm.getRate_normal_avenotusedlimitrat());

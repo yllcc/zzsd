@@ -43,8 +43,14 @@ public class CreditPersonalService {
     private String application;
     //固定交易代码
     @Value("${hd.creditPersonal.transCode}")
-    private String transCode;
+    private String transCode;   
+    //渠道Id
+    @Value("${hd.credit.channelId}")
+    private String channelId;
     
+/*	@Value("${hd.fraud.channelId}")
+	private String xmlChannelId;// 渠道号
+*/    
 	/**
 	 * 获取请求翰迪征信xml
 	 * @param UserCreditQueneModel
@@ -58,7 +64,7 @@ public class CreditPersonalService {
 		requestModel.setVersion(version);
 		requestModel.setSendTime(sendTime);
 		requestModel.setTransCode(transCode);
-		requestModel.setChannelId("11111100011");
+		requestModel.setChannelId(channelId);
 		requestModel.setChannelOrderId(JaxbUtil.getRandomStringByLength(30));
 		requestModel.setName(model.getCustName());
 		requestModel.setCid(model.getIdNo());
@@ -69,6 +75,7 @@ public class CreditPersonalService {
 //		requestModel.setMobile("18693152204");
 		//requestModel.setCardNo("622301199002040312");
 		String xmlReq = JaxbUtil.convertToXml(requestModel);
+		log.info("征信评分请求韩迪的xml数据："+xmlReq);
 		return xmlReq;
 	}
 	
@@ -80,10 +87,7 @@ public class CreditPersonalService {
 	 * @throws Exception
 	 */
 	public String sendHdCredit(String requestXml) throws Exception {
-		String channelId = "11009035";//TODO  渠道号
-		
 		String mkey = UUID.randomUUID().toString();
-
 		//BASE64(RSA(报文加密密钥))
 		String rsaXml = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), key);
 		//BASE64(3DES(报文原文))
