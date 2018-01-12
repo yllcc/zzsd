@@ -4,10 +4,13 @@ package cn.com.fotic.eimp.repository.entity;
  * @author yangll
  */
 public class MaritalEducation { 
-	
+	/**
+	 * 根据婚姻状态判别不同学历分数
+	 * @param bankCredit
+	 * @return int
+	 */
 	public static int getMaritalEducationScore(BankCredit bankCredit){
 		if(MaritalStatus.UNMARRIED.getMaritalStatus().equals(bankCredit.getRateMaritalState())) {
-			System.out.println("ssssssss"+UnmarriedEducationStatus.getstatusScore(bankCredit.getRateEduLevel()));
 			return UnmarriedEducationStatus.getstatusScore(bankCredit.getRateEduLevel());
 		}else if(MaritalStatus.MARRIED.getMaritalStatus().equals(bankCredit.getRateMaritalState())) {
 			return MarriedEducationStatus.getstatusScore(bankCredit.getRateEduLevel());
@@ -21,7 +24,7 @@ public class MaritalEducation {
 		return OtherEducationStatus.getstatusScore(bankCredit.getRateEduLevel());
 	}
 	
-	
+	//婚姻状态
 	enum MaritalStatus{
 		UNMARRIED("未婚"),MARRIED("已婚"),DIVORCE("离婚"),WIDOWED("丧偶"),OTHER("未知");
 	    private String maritalStatus ;
@@ -36,8 +39,9 @@ public class MaritalEducation {
 		}
 		
 	}  
+	//未婚对应的学历分值
      enum  UnmarriedEducationStatus{  
-    	POSTGRADUATE("硕士",105),UNDERGRADUATE("本科",105),COLLEGE("大专",68),HSCHOOL("高中",34),JX("技校",34),ZZ("中专",47),CZ("初中",34),XX("小学",34),OTHER("其他",34);
+    	POSTGRADUATE("硕士",105),UNDERGRADUATE("本科",105),COLLEGE("大专",68),HSCHOOL("高中",34),ZS("中等专业学校或中等技术学校",34),JX("技术学校",34),ZZ("中等专业",47),CZ("初中",34),XX("小学",34),OTHER("其他",34);
     	private String college;
     	private int score;
     	UnmarriedEducationStatus(String college,int score) {
@@ -70,9 +74,9 @@ public class MaritalEducation {
 	        return UnmarriedEducationStatus.OTHER.getScore();  
 		}
 	} 
-    
+    //已婚对应的分值
     enum MarriedEducationStatus {  
-    	POSTGRADUATE("硕士",73),UNDERGRADUATE("本科",73),COLLEGE("大专",53),HSCHOOL("高中",47),JX("技校",47),ZZ("中专",47),CZ("初中",47),XX("小学",34),OTHER("其他",34);
+    	POSTGRADUATE("硕士",73),UNDERGRADUATE("本科",73),COLLEGE("大专",53),HSCHOOL("高中",47),ZZ("中等专业学校或中等技术学校",47),JX("技术学校",47),CZ("初中",47),XX("小学",34),OTHER("其他",34);
     	private String college;
     	private int score;
     	MarriedEducationStatus(String college,int score) {
@@ -105,9 +109,9 @@ public class MaritalEducation {
 	        return MarriedEducationStatus.OTHER.getScore();  
 		}
 	} 
-    
+    //离婚对应的学历分值
     enum DivorceEducationStatus {  
-    	POSTGRADUATE("硕士",53),UNDERGRADUATE("本科",53),COLLEGE("大专",53),HSCHOOL("高中",34),JX("技校",34),ZZ("中专",34),CZ("初中",34),XX("小学",34),OTHER("其他",34);
+    	POSTGRADUATE("硕士",53),UNDERGRADUATE("本科",53),COLLEGE("大专",53),HSCHOOL("高中",34),ZZ("中等专业学校或中等技术学校",34),JX("技术学校",34),CZ("初中",34),XX("小学",34),OTHER("其他",34);
     	private String college;
     	private int score;
     	DivorceEducationStatus(String college,int score) {
@@ -140,9 +144,9 @@ public class MaritalEducation {
 	        return DivorceEducationStatus.OTHER.getScore();  
 		}
 	} 
-    
+    //丧偶对应的学历分值
     enum WidowedEducationStatus {  
-    	POSTGRADUATE("硕士",53),UNDERGRADUATE("本科",53),COLLEGE("大专",53),HSCHOOL("高中",34),JX("技校",34),ZZ("中专",34),CZ("初中",34),XX("小学",34),OTHER("其他",34);
+    	POSTGRADUATE("硕士",53),UNDERGRADUATE("本科",53),COLLEGE("大专",53),HSCHOOL("高中",34),ZZ("中等专业学校或中等技术学校",34),JX("技术学校",34),CZ("初中",34),XX("小学",34),OTHER("其他",34);
     	private String college;
     	private int score;
     	WidowedEducationStatus(String college,int score) {
@@ -175,9 +179,9 @@ public class MaritalEducation {
 	        return WidowedEducationStatus.OTHER.getScore();  
 		}
 	} 
-    
+    //其他对应的学历分值
     enum OtherEducationStatus {  
-    	POSTGRADUATE("硕士",53),UNDERGRADUATE("本科",53),COLLEGE("大专",53),HSCHOOL("高中",34),JX("技校",34),ZZ("中专",34),CZ("初中",34),XX("小学",34),OTHER("其他",34);
+    	POSTGRADUATE("硕士",53),UNDERGRADUATE("本科",53),COLLEGE("大专",53),HSCHOOL("高中",34),ZZ("中等专业学校或中等技术学校",34),JX("技术学校",34),CZ("初中",34),XX("小学",34),OTHER("其他",34);
     	private String college;
     	private int score;
     	OtherEducationStatus(String college,int score) {

@@ -4,9 +4,18 @@ import cn.com.fotic.eimp.repository.entity.BankCredit;
 import cn.com.fotic.eimp.repository.entity.MaritalEducation;
 import cn.com.fotic.eimp.repository.entity.Score;
 import cn.com.fotic.eimp.repository.entity.SexEnum;
-
+/**
+ * 分数求和
+ * @author lly
+ *
+ */
 public class SumUtil {
 
+	/**
+	 * 统计区间总分
+	 * @param bankCredit
+	 * @return
+	 */
 	public static  int countScore(BankCredit bankCredit) {
 		int sumScore=0;
 		//信用卡审批次数
@@ -31,7 +40,6 @@ public class SumUtil {
 		int sexScore=SexEnum.getSexScore(bankCredit.getRateRegister());
 		//学历婚姻
 		int meScore=MaritalEducation.getMaritalEducationScore(bankCredit);
-		System.out.println(meScore);
 		System.out.println(approvalCount+"&"+threeCount+"&"+loanopenRatio+"&"+firstendBal+"&"+
 		maxoverdueCount+"&"+accountCount+"&"+avenotusedlimitrat+"&"+opencardLimit+"&"+accountCardage+"&"+sexScore+"&"+meScore);
 		
@@ -52,7 +60,7 @@ public class SumUtil {
 		bankCredit.setRateRecentlyOpencardLimit("80000");
 		bankCredit.setRateFirstnoaccountCardage("80");
 		bankCredit.setRateMaritalState("未婚");
-		bankCredit.setRateEduLevel("大学专科和专科学校（简称\"大专\"）");
+		bankCredit.setRateEduLevel("大专");
 		System.out.println(countScore(bankCredit));
 	}
 }
