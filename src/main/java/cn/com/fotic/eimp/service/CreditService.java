@@ -118,7 +118,7 @@ public class CreditService {
 		}
 		String a = new String(buffer, "utf-8");
 		String b = URLDecoder.decode(a.toString(), "utf-8");
-		log.info("信贷请求进来的json："+b);
+		log.info("征信请求进来的json："+b);
 		return b;
 	}
 
@@ -284,7 +284,7 @@ public class CreditService {
 	 */
 	public HdCreditScoreModel sendHdPost(String flowNo,String businessNo, String cust_name, String cert_type,
 			String cert_num, String phoneNo) throws Exception {
-		log.info("发送翰迪http请求查询征信.......");
+		log.info("征信发送翰迪http请求查询征信.......");
 		UserCreditQueneModel user = new UserCreditQueneModel();
 		user.setBusinessNo(businessNo);
 		user.setCustName(cust_name);
@@ -292,7 +292,7 @@ public class CreditService {
 		user.setPhoneNo(phoneNo);
 		String xml = creditPersonalService.getCreditRequestXml(user);
 		String returnxml = creditPersonalService.sendHdCredit(xml);
-		log.info("征信翰迪返回征信：" + returnxml);
+		log.info("征信翰迪返回：" + returnxml);
 		HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
 		String istargeted=hm.getResData().getIs_targeted();
 		CreditPersonalDic cpd=new CreditPersonalDic();		
@@ -357,14 +357,14 @@ public class CreditService {
 			HdCreditScoreModel returnxml = this.sendHdPost(flowNo,businessNo, cust_name, cert_type, cert_num, phoneNo);
 			// 查询韩迪返回的数据进行解析评分
 			String score=returnxml.getResData().getScore();
-			log.info("韩迪返回的分数："+score);
+			log.info(businessNo + "：征信韩迪返回的分数："+score);
 			return score;
 		} else {
 			this.savecredit(cm);
 			// 查询人行的数据的数据进行解析评分
 			int sum=SumUtil.countScore(cm);
 			String score=String.valueOf(sum);
-			log.info("人行返回的分数:"+score);
+			log.info(businessNo + "：征信人行返回的分数:"+score);
 			return score;
 		}
 	}
@@ -374,7 +374,7 @@ public class CreditService {
 	 * @param json
 	 */
 	public void creditCallBack(String json) {
-		log.info("信贷回调征信接口：" + json);
+		log.info("征信回调征信接口：" + json);
 		this.callBackCredit(json);
 	}
 	  /**
@@ -409,7 +409,7 @@ public class CreditService {
 					sb.append(lines);
 				}
 				String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
-				log.info("信贷征信回调成功,返回:"+callBackCredit);
+				log.info("征信回调成功,返回:"+callBackCredit);
 				reader.close();
 				// 断开连接
 				connection.disconnect();

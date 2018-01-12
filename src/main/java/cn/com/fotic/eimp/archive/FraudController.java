@@ -62,7 +62,7 @@ public class FraudController {
 	@JmsListener(destination = "${queue.fraudArchiveBuffer.destination}", concurrency = "${queue.fraudArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String reqSerial) {
 		String json = fraudRedisTemplate.opsForValue().get(reqSerial);
-		log.info("进入队列的反欺诈流水号:" + reqSerial + "JSON数据:" + json);
+		log.info(reqSerial +"反欺诈进入JSON数据,第一步:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -93,9 +93,10 @@ public class FraudController {
 	public void processQueueConsumer(String businessNo) {
 
 		String json = fraudRedisTemplate.opsForValue().get(businessNo);
-		log.info("反欺诈需要进行处理的单条记录:" + json);
+		log.info(businessNo+"反欺诈处理的单条记录,第二步" + json);
 		CallBackUserCreditModel cm = fraudService.fraudContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
+		log.info(businessNo+"：反欺诈回调："+callbackjson);
 		fraudRedisTemplate.opsForValue().set(businessNo, callbackjson);
 		fraudJmsMessagingTemplate.convertAndSend(fraudArchiveCallbackQueue, businessNo);
 
@@ -104,8 +105,8 @@ public class FraudController {
 	@JmsListener(destination = "${queue.fraudArchiveCallback.destination}", concurrency = "${queue.fraudArchiveCallback.concurrency}")
 	public void callbackQueueConsumer(String businessNo) {
 		String content = fraudRedisTemplate.opsForValue().get(businessNo);
-
 		// 回调信贷
+		log.info(businessNo+"：反欺诈处理回调，第三步："+content);
 		fraudService.fraudCallBack(content);
 		fraudRedisTemplate.delete(businessNo);
 		log.info(businessNo + "反欺诈结束处理完成，已从redis队列删除");

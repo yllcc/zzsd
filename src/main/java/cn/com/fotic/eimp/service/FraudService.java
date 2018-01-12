@@ -118,7 +118,7 @@ public class FraudService {
 				log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
 			} else {
 				// 韩迪返回查询错误信息
-				log.info("查询反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
+				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -163,7 +163,7 @@ public class FraudService {
 		hd.setWifiMac("");
 		hd.setMac("");
 		String xmlReq = JaxbUtil.convertToXml(hd);
-		log.info("韩迪反欺诈xml:"+xmlReq);
+		log.info("反欺诈xml:"+xmlReq);
 		return xmlReq;
 	}
 
@@ -231,7 +231,7 @@ public class FraudService {
 	 * @param fraudScore
 	 */
 	public void fraudCallBack(String fraudjson) {
-		log.info("回调反欺诈接口" + fraudjson);
+		log.info("反欺诈接口回调" + fraudjson);
 		this.callBackFraud(fraudjson);
 	}
 
@@ -275,7 +275,7 @@ public class FraudService {
 				sb.append(lines);
 			}
 			String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
-			log.info("信贷反欺诈回调成功,返回:"+callBackCredit);
+			log.info("反欺诈回调成功,返回:"+callBackCredit);
 			reader.close();
 			// 断开连接
 			connection.disconnect();
