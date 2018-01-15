@@ -207,6 +207,9 @@ public class MaritalEducation {
 
 		public static int getstatusScore(String college) {
 			for (OtherEducationStatus c : OtherEducationStatus.values()) {  
+				if("".equals(college)||college==null) {
+					break;
+				}
 				if(college.indexOf(c.getCollege())!=-1){
 	                return c.score;  
 	            } 

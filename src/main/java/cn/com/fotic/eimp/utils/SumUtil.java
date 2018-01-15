@@ -68,9 +68,9 @@ public class SumUtil {
 	}
 	
 	public static void main(String[] args) {
-//		BankCredit bankCredit=new BankCredit();
-//		bankCredit.setRateCreditcardApprovalCont("0");
-//		bankCredit.setRateCreditreporCount("1");
+		BankCredit bankCredit=new BankCredit();
+		bankCredit.setRateCreditcardApprovalCont("4");
+		bankCredit.setRateCreditreporCount("8");
 //		bankCredit.setRateLoanoffLoanopenRatio("1.0");
 //		bankCredit.setRateNoaccountFirstendBal("0");
 //		bankCredit.setRateCreditAccountCount("9");
@@ -79,7 +79,7 @@ public class SumUtil {
 //		bankCredit.setRateFirstnoaccountCardage("80");
 //		bankCredit.setRateMaritalState("未婚");
 //		bankCredit.setRateEduLevel("大专");
-//		System.out.println(countScore(bankCredit));
-		System.out.println(getCreditScore("598"));
+		System.out.println(countScore(bankCredit));
+		//System.out.println(getCreditScore("598"));
 	}
 }
