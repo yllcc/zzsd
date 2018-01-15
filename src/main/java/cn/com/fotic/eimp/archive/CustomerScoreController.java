@@ -55,9 +55,9 @@ public class CustomerScoreController {
 	private CreditService creditService;
 
 	@JmsListener(destination = "${queue.creditArchiveBuffer.destination}", concurrency = "${queue.creditArchiveBuffer.concurrency}")
-	public void bufferQueueConsumer(String reqSerial) {
-		String json = creditRedisTemplate.opsForValue().get(reqSerial);
-		log.info(reqSerial+"征信流水号JSON数据,第一步:" + json);
+	public void bufferQueueConsumer(String flownNo) {
+		String json = creditRedisTemplate.opsForValue().get(flownNo);
+		log.info(flownNo+"征信流水号JSON数据,第一步:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -76,24 +76,24 @@ public class CustomerScoreController {
 				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
-				String businessNo = userCredit.getBusinessNo();
-				creditRedisTemplate.opsForValue().set(businessNo, processJson);
-				creditJmsMessagingTemplate.convertAndSend(creditArchiveProcessQueue, businessNo);
-			}
-		}
-		// redisTemplate.delete(reqSerial);
+				String businessNo = "credit"+userCredit.getBusinessNo();
+				creditRedisTemplate.opsForValue().set(businessNo, processJson);			
+				creditJmsMessagingTemplate.convertAndSend(creditArchiveProcessQueue, businessNo);			
+			}			
+			creditRedisTemplate.delete(flownNo);
+		}		
 	}
 
 	@JmsListener(destination = "${queue.creditArchiveProcess.destination}", concurrency = "${queue.creditArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
-
+	
 		String json = creditRedisTemplate.opsForValue().get(businessNo);
 		log.info(businessNo +"：征信处理单条记录,第二步：" + json);
 		CallBackCustomerScoreModel cm = creditService.creditContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
-		log.info(businessNo+"：征信业务处理完成需要回调："+callbackjson);
 		creditRedisTemplate.opsForValue().set(businessNo, callbackjson);
 		creditJmsMessagingTemplate.convertAndSend(creditArchiveCallbackQueue, businessNo);
+
 	}
 
 	@JmsListener(destination = "${queue.creditArchiveCallback.destination}", concurrency = "${queue.creditArchiveCallback.concurrency}")
@@ -113,10 +113,10 @@ public class CustomerScoreController {
 		String requestParam = creditService.longinHttep(request);
 		UserCreditReturnModel um = creditService.verificationCredit(requestParam);
 		// 2.获取流水号
-		String serialNo = creditService.flownNo(requestParam);
+		String flownNo = creditService.flownNo(requestParam);
 		// 3.返回队列(JSON,流水号)	
-		creditRedisTemplate.opsForValue().set(serialNo, requestParam);
-		creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, serialNo);	
+		creditRedisTemplate.opsForValue().set(flownNo, requestParam);
+		creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, flownNo);	
 		return um;
 	}
 }

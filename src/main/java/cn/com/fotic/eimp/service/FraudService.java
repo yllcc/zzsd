@@ -80,6 +80,9 @@ public class FraudService {
 	 * @return
 	 */
 	public CallBackUserCreditModel fraudContentService(String creditjson) {
+		 if(creditjson.equals(null)) {
+			   return null;
+		   }else {
 		CallBackUserCreditModel cs = new CallBackUserCreditModel();
 		CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
 		List<CallBackUserCreditContentModel> csclist = new ArrayList<CallBackUserCreditContentModel>();
@@ -97,29 +100,32 @@ public class FraudService {
 		// 2.进行数据加密,发送数据给韩迪hd.fraud.channelId 
 		try {
 			HdCreditReturnModel r = this.hdCreditService(xml);
+			CreditFraudDic cpd = new CreditFraudDic();
 			if ("0000".equals(r.getResCode())) {
 				// 韩迪返回查询成功信息
-				CreditFraudDic cpd = new CreditFraudDic();
+				
 				String fraudScore = r.getData().get(0).getScore();
-				cpd.setFraudNum(flowNo);
-				cpd.setBusinessNo(businessNo);
-				cpd.setApplyTime(new Date());
-				cpd.setCustName(custName);
-				cpd.setCertType(idType);
-				cpd.setCertNum(idNo);
-				cpd.setPhone(phoneNo);
 				cpd.setFraudScore(fraudScore);
-				cpd.setFraudNum(businessNo);
-				// 将反欺诈分数入库
-				this.fraudScoreSave(cpd);
-				csc.setBusinessNo(businessNo);
-				csc.setFraudScore(fraudScore);
-				csclist.add(csc);
-				log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
 			} else {
 				// 韩迪返回查询错误信息
 				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
+				cpd.setFraudScore("35");//TODO
 			}
+			cpd.setFraudNum(flowNo);
+			cpd.setBusinessNo(businessNo);
+			cpd.setApplyTime(new Date());
+			cpd.setCustName(custName);
+			cpd.setCertType(idType);
+			cpd.setCertNum(idNo);
+			cpd.setPhone(phoneNo);
+			
+			cpd.setFraudNum(businessNo);
+			// 将反欺诈分数入库
+			this.fraudScoreSave(cpd);
+			csc.setBusinessNo(businessNo);
+			csc.setFraudScore(cpd.getFraudScore());
+			csclist.add(csc);
+			log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -130,7 +136,7 @@ public class FraudService {
 		cs.setContent(csclist);
 		return cs;
 	}
-
+	}
 	/**
 	 * 调用翰迪接口,反欺诈 1.生成xml
 	 * 
@@ -139,6 +145,9 @@ public class FraudService {
 	 * @return
 	 */
 	public String HdFraudService(String idNo, String custName) {
+		 if(idNo.equals(null)||custName.equals(null)) {
+			   return null;
+		   }else {
 		HdAntiFraudModel hd = new HdAntiFraudModel();
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
@@ -166,7 +175,7 @@ public class FraudService {
 		log.info("反欺诈xml:"+xmlReq);
 		return xmlReq;
 	}
-
+	}
 	/**
 	 * 调用翰迪接口 加密请求数据
 	 * 
@@ -174,6 +183,9 @@ public class FraudService {
 	 * @throws Exception
 	 */
 	public HdCreditReturnModel hdCreditService(String xml) throws Exception {
+		 if(xml.equals(null)) {
+			   return null;
+		   }else {
 		HdCreditReturnModel hrm = new HdCreditReturnModel();
 		String mkey = UUID.randomUUID().toString();
 		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
@@ -222,7 +234,7 @@ public class FraudService {
 			return hrm;
 		}
 	}
-
+	}
 	
 	/**
 	 * 回调反欺诈借口

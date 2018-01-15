@@ -25,6 +25,7 @@ import com.alibaba.fastjson.JSONObject;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
+import cn.com.fotic.eimp.model.HdCreditScoreContentModel;
 import cn.com.fotic.eimp.model.HdCreditScoreModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
@@ -71,6 +72,10 @@ public class CreditService {
 	 * @return
 	 */
 	 public	CallBackCustomerScoreModel creditContentService(String creditjson) {
+		 
+		   if(creditjson.equals(null)) {
+			   return null;
+		   }else {
 	    	CallBackCustomerScoreModel  cs=new CallBackCustomerScoreModel ();
 	    	CallBackCustomerScoreContentModel csc=new CallBackCustomerScoreContentModel();
 	    	List <CallBackCustomerScoreContentModel> csclist=new ArrayList <CallBackCustomerScoreContentModel>();
@@ -95,6 +100,7 @@ public class CreditService {
 			cs.setReqTime(user.getReqTime());
 			cs.setFlowNo(user.getFlowNo());	
 			return cs;	
+		   }
 	    }
 	/**
 	 * 1.接收转换成json
@@ -226,7 +232,6 @@ public class CreditService {
 	 */
 	public BankCredit creditOracle(String businessNo, String cust_name, String cert_type, String cert_num,
 			String phoneNo) throws Exception {
-		HdCreditReturnModel hcm = new HdCreditReturnModel();
 		// 查询人行存在评级信息
 		BackCredit cm = backCreditRepository.getOptName(cust_name, cert_type, cert_num);
 		BankCredit um = new BankCredit();
@@ -282,7 +287,7 @@ public class CreditService {
 	 * @return
 	 * @throws Exception
 	 */
-	public HdCreditScoreModel sendHdPost(String flowNo,String businessNo, String cust_name, String cert_type,
+	public CreditPersonalDic sendHdPost(String flowNo,String businessNo, String cust_name, String cert_type,
 			String cert_num, String phoneNo) throws Exception {
 		log.info("征信发送翰迪http请求查询征信.......");
 		UserCreditQueneModel user = new UserCreditQueneModel();
@@ -294,47 +299,60 @@ public class CreditService {
 		String returnxml = creditPersonalService.sendHdCredit(xml);
 		log.info("征信翰迪返回：" + returnxml);
 		HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
-		String istargeted=hm.getResData().getIs_targeted();
-		CreditPersonalDic cpd=new CreditPersonalDic();		
-		if("TRUE".equals(istargeted)){
-			String isTargeted="1";
-			cpd.setIsTargert(isTargeted);
+		CreditPersonalDic cpd=new CreditPersonalDic();	
+		cpd.setApplyNum(businessNo);
+		cpd.setSerialNo(flowNo);
+		cpd.setBusinessNo(businessNo);
+		cpd.setApplyTime(new Date());
+		cpd.setCustName(cust_name);
+		cpd.setCertType(cert_type);
+		cpd.setPhone(phoneNo);
+		if(hm!=null) {
+			if(hm.getResData()!=null){
+				HdCreditScoreContentModel resData=hm.getResData();
+				String istargeted=resData.getIs_targeted();
+				if(StringUtils.isNotBlank(istargeted)) {
+					if("TRUE".equals(istargeted)){
+						String isTargeted="1";
+						cpd.setIsTargert(isTargeted);
+					}else {
+						String isTargeted="2";
+						cpd.setIsTargert(isTargeted);
+					}
+				}
+				if ("0000".equals(hm.getResCode())) {			
+					cpd.setCreditScore(hm.getResData().getScore());
+					cpd.setStability(hm.getResData().getStability());
+					cpd.setBuyingIndex(hm.getResData().getBuyingIndex());
+					cpd.setRiskIndex(hm.getResData().getRiskIndex());
+					cpd.setPerformanceIndex(hm.getResData().getPerformanceIndex());
+					cpd.setResonableConsuming(hm.getResData().getResonableConsuming());
+					cpd.setCity(hm.getResData().getCity());
+					cpd.setComsumSocial(hm.getResData().getComsumingSocial());
+					cpd.setIncome(hm.getResData().getIncomming());
+					cpd.setCellPhone_preference(hm.getResData().getCellphonePreference());
+					cpd.setEcommerceActiveness(hm.getResData().getEcommerceActiveness());
+					cpd.setEcommerceAddressStability(hm.getResData().getEcommerceAddressStability());
+					cpd.setEcommerceCellPhoneStability(hm.getResData().getEcommercecellphoneStability());
+					cpd.setEcommerceAccountHistory(hm.getResData().getEcommerceAccountHistory());
+					cpd.setCashPreference(hm.getResData().getCellphonePreference());
+					cpd.setRiskPeriodPayment(hm.getResData().getRiskPeriodPayment());
+					cpd.setRiskCategoryPayment(hm.getResData().getRiskCategoryPayment());
+					cpd.setScore(SumUtil.getCreditScore(hm.getResData().getScore()));
+					cpd.setResponseBody(returnxml);	
+					creditPersonalRepository.save(cpd);
+					log.info("征信韩迪返回入库成功:分数："+hm.getResData().getScore());
+				}else {
+					cpd.setScore("373");
+					cpd.setResponseBody(returnxml);
+				}
+			}
 		}else {
-			String isTargeted="2";
-			cpd.setIsTargert(isTargeted);
+			cpd.setScore("373");
+			cpd.setResponseBody(returnxml);
 		}
-		if ("0000".equals(hm.getResCode())) {			
-			cpd.setApplyNum(businessNo);
-			cpd.setSerialNo(flowNo);
-			cpd.setBusinessNo(businessNo);
-			cpd.setApplyTime(new Date());
-			cpd.setCustName(cust_name);
-			cpd.setCertType(cert_type);
-			cpd.setPhone(phoneNo);
-			cpd.setCreditScore(hm.getResData().getScore());
-			cpd.setStability(hm.getResData().getStability());
-			cpd.setBuyingIndex(hm.getResData().getBuyingIndex());
-			cpd.setRiskIndex(hm.getResData().getRiskIndex());
-			cpd.setPerformanceIndex(hm.getResData().getPerformanceIndex());
-			cpd.setResonableConsuming(hm.getResData().getResonableConsuming());
-			cpd.setCity(hm.getResData().getCity());
-			cpd.setComsumSocial(hm.getResData().getComsumingSocial());
-			cpd.setIncome(hm.getResData().getIncomming());
-			cpd.setCellPhone_preference(hm.getResData().getCellphonePreference());
-			cpd.setEcommerceActiveness(hm.getResData().getEcommerceActiveness());
-			cpd.setEcommerceAddressStability(hm.getResData().getEcommerceAddressStability());
-			cpd.setEcommerceCellPhoneStability(hm.getResData().getEcommercecellphoneStability());
-			cpd.setEcommerceAccountHistory(hm.getResData().getEcommerceAccountHistory());
-			cpd.setCashPreference(hm.getResData().getCellphonePreference());
-			cpd.setRiskPeriodPayment(hm.getResData().getRiskPeriodPayment());
-			cpd.setRiskCategoryPayment(hm.getResData().getRiskCategoryPayment());
-			cpd.setResponseBody(returnxml);	
-			creditPersonalRepository.save(cpd);
-			log.info("征信韩迪返回入库成功");
-		}else {
-			log.info("征信韩迪征信返回的错误代码,错误信息："+hm.getResCode(),hm.getResMsg());
-		}
-		return hm;
+		creditPersonalRepository.save(cpd);
+		return cpd;
 	}
 
 	/**
@@ -354,10 +372,11 @@ public class CreditService {
 
 		BankCredit cm = this.creditOracle( businessNo, cust_name, cert_type, cert_num, phoneNo);
 		if (null == cm ) {
-			HdCreditScoreModel returnxml = this.sendHdPost(flowNo,businessNo, cust_name, cert_type, cert_num, phoneNo);
+			CreditPersonalDic returnxml = this.sendHdPost(flowNo,businessNo, cust_name, cert_type, cert_num, phoneNo);
 			// 查询韩迪返回的数据进行解析评分
-			String score=returnxml.getResData().getScore();
-			log.info(businessNo + "：征信韩迪返回的分数："+score);
+			String score=returnxml.getScore();
+		   //
+			log.info(businessNo + "：征信人行返回的分数："+score);
 			return score;
 		} else {
 			this.savecredit(cm);

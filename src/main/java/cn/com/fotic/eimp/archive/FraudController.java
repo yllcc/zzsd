@@ -81,12 +81,13 @@ public class FraudController {
 				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
-				String businessNo = userCredit.getBusinessNo();
+				String businessNo = "fraud"+userCredit.getBusinessNo();
 				fraudRedisTemplate.opsForValue().set(businessNo, processJson);
 				fraudJmsMessagingTemplate.convertAndSend(fraudArchiveProcessQueue, businessNo);
 			}
+			 fraudRedisTemplate.delete(reqSerial);
 		}
-		// fraudRedisTemplate.delete(reqSerial);
+		
 	}
 
 	@JmsListener(destination = "${queue.fraudArchiveProcess.destination}", concurrency = "${queue.fraudArchiveProcess.concurrency}")
@@ -96,7 +97,6 @@ public class FraudController {
 		log.info(businessNo+"反欺诈处理的单条记录,第二步" + json);
 		CallBackUserCreditModel cm = fraudService.fraudContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
-		log.info(businessNo+"：反欺诈回调："+callbackjson);
 		fraudRedisTemplate.opsForValue().set(businessNo, callbackjson);
 		fraudJmsMessagingTemplate.convertAndSend(fraudArchiveCallbackQueue, businessNo);
 
@@ -108,7 +108,7 @@ public class FraudController {
 		// 回调信贷
 		log.info(businessNo+"：反欺诈处理回调，第三步："+content);
 		fraudService.fraudCallBack(content);
-		fraudRedisTemplate.delete(businessNo);
+		//fraudRedisTemplate.delete(businessNo);
 		log.info(businessNo + "反欺诈结束处理完成，已从redis队列删除");
 
 	}
