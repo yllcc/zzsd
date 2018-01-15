@@ -1,5 +1,7 @@
 package cn.com.fotic.eimp.utils;
 
+import java.math.BigDecimal;
+
 import cn.com.fotic.eimp.repository.entity.BankCredit;
 import cn.com.fotic.eimp.repository.entity.MaritalEducation;
 import cn.com.fotic.eimp.repository.entity.Score;
@@ -7,10 +9,12 @@ import cn.com.fotic.eimp.repository.entity.SexEnum;
 /**
  * 分数求和
  * @author lly
- *
  */
 public class SumUtil {
 
+	private final static double rate=2.45;
+	private final static double creditScore=974.5;
+	
 	/**
 	 * 统计区间总分
 	 * @param bankCredit
@@ -49,18 +53,33 @@ public class SumUtil {
 		return sumScore;
 	}
 	
+	/**
+	 * 征信算分
+	 * @param score
+	 * @return
+	 * 征信分 =  2.45  × 京东分 —974.5（结果四舍五入）
+	 */
+	public static String getCreditScore(String score) {
+		BigDecimal b1 = new BigDecimal(Double.valueOf(score));
+		BigDecimal b2 = new BigDecimal(rate);
+		BigDecimal b3=b1.multiply(b2);
+		BigDecimal result=b3.subtract(new BigDecimal(creditScore)).setScale(0,BigDecimal.ROUND_HALF_UP);
+		return result.toString();
+	}
+	
 	public static void main(String[] args) {
-		BankCredit bankCredit=new BankCredit();
-		bankCredit.setRateCreditcardApprovalCont("0");
-		bankCredit.setRateCreditreporCount("1");
-		bankCredit.setRateLoanoffLoanopenRatio("1.0");
-		bankCredit.setRateNoaccountFirstendBal("0");
-		bankCredit.setRateCreditAccountCount("9");
-		bankCredit.setRateNormalAvenotusedlimitrat("75.0");
-		bankCredit.setRateRecentlyOpencardLimit("80000");
-		bankCredit.setRateFirstnoaccountCardage("80");
-		bankCredit.setRateMaritalState("未婚");
-		bankCredit.setRateEduLevel("大专");
-		System.out.println(countScore(bankCredit));
+//		BankCredit bankCredit=new BankCredit();
+//		bankCredit.setRateCreditcardApprovalCont("0");
+//		bankCredit.setRateCreditreporCount("1");
+//		bankCredit.setRateLoanoffLoanopenRatio("1.0");
+//		bankCredit.setRateNoaccountFirstendBal("0");
+//		bankCredit.setRateCreditAccountCount("9");
+//		bankCredit.setRateNormalAvenotusedlimitrat("75.0");
+//		bankCredit.setRateRecentlyOpencardLimit("80000");
+//		bankCredit.setRateFirstnoaccountCardage("80");
+//		bankCredit.setRateMaritalState("未婚");
+//		bankCredit.setRateEduLevel("大专");
+//		System.out.println(countScore(bankCredit));
+		System.out.println(getCreditScore("598"));
 	}
 }
