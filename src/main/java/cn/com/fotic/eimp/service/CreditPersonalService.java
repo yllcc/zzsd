@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 翰迪征信接口类
+ * 
  * @author yangll
  *
  */
@@ -26,36 +27,37 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CreditPersonalService {
 
- 	@Value("${hd.url}") 
- 	private String URL;
- 	
-    @Value("${hd.publicKey}")
-    private String key;
-    //当前版本取值
-    @Value("${hd.fraud.version}") 
-    private String version;
-    //应用名称
-    @Value("${hd.creditPersonal.application}")
-    private String application;
-    //固定交易代码
-    @Value("${hd.creditPersonal.transCode}")
-    private String transCode;   
-    //渠道Id
-    @Value("${hd.credit.channelId}")
-    private String channelId;
-    
-/*	@Value("${hd.fraud.channelId}")
-	private String xmlChannelId;// 渠道号
-*/    
+	@Value("${hd.url}")
+	private String URL;
+
+	@Value("${hd.publicKey}")
+	private String key;
+	// 当前版本取值
+	@Value("${hd.fraud.version}")
+	private String version;
+	// 应用名称
+	@Value("${hd.creditPersonal.application}")
+	private String application;
+	// 固定交易代码
+	@Value("${hd.creditPersonal.transCode}")
+	private String transCode;
+	// 渠道Id
+	@Value("${hd.credit.channelId}")
+	private String channelId;
+
+	/*
+	 * @Value("${hd.fraud.channelId}") private String xmlChannelId;// 渠道号
+	 */
 	/**
 	 * 获取请求翰迪征信xml
+	 * 
 	 * @param UserCreditQueneModel
 	 * @return xml
 	 */
 	public String getCreditRequestXml(UserCreditQueneModel model) {
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
-		HdCreditRequestModel requestModel=new HdCreditRequestModel();
+		HdCreditRequestModel requestModel = new HdCreditRequestModel();
 		requestModel.setApplication(application);
 		requestModel.setVersion(version);
 		requestModel.setSendTime(sendTime);
@@ -65,36 +67,35 @@ public class CreditPersonalService {
 		requestModel.setName(model.getCustName());
 		requestModel.setCid(model.getIdNo());
 		requestModel.setMobile(model.getPhoneNo());
-		requestModel.setCardNo("");//银行卡号 选填
-//		requestModel.setName("张三");
-//		requestModel.setCid("120101199801017858");
-//		requestModel.setMobile("18693152204");
-		//requestModel.setCardNo("622301199002040312");
+		requestModel.setCardNo("");// 银行卡号 选填
+		// requestModel.setName("张三");
+		// requestModel.setCid("120101199801017858");
+		// requestModel.setMobile("18693152204");
+		// requestModel.setCardNo("622301199002040312");
 		String xmlReq = JaxbUtil.convertToXml(requestModel);
-		log.info("征信评分请求韩迪的xml数据："+xmlReq);
 		return xmlReq;
 	}
-	
-	
+
 	/**
 	 * 翰迪征信请求
+	 * 
 	 * @param xml
 	 * @return
 	 * @throws Exception
 	 */
 	public String sendHdCredit(String requestXml) throws Exception {
 		String mkey = UUID.randomUUID().toString();
-		//BASE64(RSA(报文加密密钥))
+		// BASE64(RSA(报文加密密钥))
 		String rsaXml = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), key);
-		//BASE64(3DES(报文原文))
+		// BASE64(3DES(报文原文))
 		String desXml = new String(
 				Base64Utils.encode(ThreeDESUtils.encrypt(requestXml.toString().getBytes("utf-8"), mkey.getBytes())));
 
 		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
 		String returnXml = new String(Base64Utils.encode(channelId.getBytes("utf-8"))) + "|" + rsaXml + "|" + desXml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
-		String errormsg="";
-		if(StringUtils.isNotEmpty(reutrnResult)) {
+		String errormsg = "";
+		if (StringUtils.isNotEmpty(reutrnResult)) {
 			String xmlArr[] = reutrnResult.split("\\|");
 
 			if ("0".equals(xmlArr[0])) {
@@ -104,11 +105,12 @@ public class CreditPersonalService {
 				byte[] reponseByte = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
 				String reponseXml = new String(reponseByte, "utf-8");
 				log.info("3DES(报文)" + reponseXml);
-				//log.info("MD5(报文)" + new String(Base64Utils.encode(Md5Utils.md5ToHexStr(reponseXml).getBytes("utf-8"))));
+				// log.info("MD5(报文)" + new
+				// String(Base64Utils.encode(Md5Utils.md5ToHexStr(reponseXml).getBytes("utf-8"))));
 				return reponseXml;
 			}
-		}else {
-			errormsg="未接收到返回信息";
+		} else {
+			errormsg = "未接收到返回信息";
 			log.info(errormsg);
 			return errormsg;
 		}

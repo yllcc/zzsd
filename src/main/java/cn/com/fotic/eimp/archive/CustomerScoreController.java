@@ -57,7 +57,7 @@ public class CustomerScoreController {
 	@JmsListener(destination = "${queue.creditArchiveBuffer.destination}", concurrency = "${queue.creditArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String flownNo) {
 		String json = creditRedisTemplate.opsForValue().get(flownNo);
-		log.info(flownNo+"征信流水号JSON数据,第一步:" + json);
+		log.info(flownNo + "征信流水号JSON数据,第一步:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -76,19 +76,19 @@ public class CustomerScoreController {
 				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
-				String businessNo = "credit"+userCredit.getBusinessNo();
-				creditRedisTemplate.opsForValue().set(businessNo, processJson);			
-				creditJmsMessagingTemplate.convertAndSend(creditArchiveProcessQueue, businessNo);			
-			}			
+				String businessNo = "credit" + userCredit.getBusinessNo();
+				creditRedisTemplate.opsForValue().set(businessNo, processJson);
+				creditJmsMessagingTemplate.convertAndSend(creditArchiveProcessQueue, businessNo);
+			}
 			creditRedisTemplate.delete(flownNo);
-		}		
+		}
 	}
 
 	@JmsListener(destination = "${queue.creditArchiveProcess.destination}", concurrency = "${queue.creditArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
-	
+
 		String json = creditRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo +"：征信处理单条记录,第二步：" + json);
+		log.info(businessNo + "：征信处理单条记录,第二步：" + json);
 		CallBackCustomerScoreModel cm = creditService.creditContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
 		creditRedisTemplate.opsForValue().set(businessNo, callbackjson);
@@ -98,12 +98,20 @@ public class CustomerScoreController {
 
 	@JmsListener(destination = "${queue.creditArchiveCallback.destination}", concurrency = "${queue.creditArchiveCallback.concurrency}")
 	public void callbackQueueConsumer(String businessNo) {
-		String content =creditRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo+"：征信业务处理回调，第三步："+content);
+		String content = creditRedisTemplate.opsForValue().get(businessNo);
+		log.info(businessNo + "：征信业务处理回调，第三步：" + content);
 		// 回调信贷
-		creditService.creditCallBack(content);
-		creditRedisTemplate.delete(businessNo);
-		log.info(businessNo + "征信结束处理完成，已从redis队列删除。请求成功");
+		boolean a = false;
+		for (int i = 0; i < 3; i++) {
+			a = creditService.creditCallBack(content);
+			if (a == true) {
+				creditRedisTemplate.delete(businessNo);
+				log.info(businessNo + "征信结束处理完成，已从redis队列删除。请求成功");
+				break;
+			} else {
+				a = false;
+			}
+		}
 	}
 
 	@RequestMapping(value = "/customerScore")
@@ -114,9 +122,9 @@ public class CustomerScoreController {
 		UserCreditReturnModel um = creditService.verificationCredit(requestParam);
 		// 2.获取流水号
 		String flownNo = creditService.flownNo(requestParam);
-		// 3.返回队列(JSON,流水号)	
+		// 3.返回队列(JSON,流水号)
 		creditRedisTemplate.opsForValue().set(flownNo, requestParam);
-		creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, flownNo);	
+		creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, flownNo);
 		return um;
 	}
 }

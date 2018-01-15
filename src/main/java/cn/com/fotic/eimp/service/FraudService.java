@@ -26,6 +26,7 @@ import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
+import cn.com.fotic.eimp.model.UserCreditReturnModel;
 import cn.com.fotic.eimp.primary.CreditFraudRepository;
 import cn.com.fotic.eimp.repository.entity.CreditFraudDic;
 import cn.com.fotic.eimp.utils.Base64Utils;
@@ -191,7 +192,7 @@ public class FraudService {
 		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
 		String strKey = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), publicKey);
 		String strxml = new String(
-				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
+					Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
 		String returnXml = new String(Base64Utils.encode("11000000".getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
 		String xmlArr[] = reutrnResult.split("\\|");
@@ -242,9 +243,10 @@ public class FraudService {
 	 * @param businessNo
 	 * @param fraudScore
 	 */
-	public void fraudCallBack(String fraudjson) {
+	public boolean  fraudCallBack(String fraudjson) {
 		log.info("反欺诈接口回调" + fraudjson);
-		this.callBackFraud(fraudjson);
+		return this.callBackFraud(fraudjson);
+
 	}
 
 	/**
@@ -260,7 +262,7 @@ public class FraudService {
 	 * @param fraudUrl
 	 * @param json
 	 */
-	public void callBackFraud(String json) {
+	public boolean callBackFraud(String json) {
 		try {
 			// 创建连接
 			URL url = new URL(fraudUrl);
@@ -288,11 +290,19 @@ public class FraudService {
 			}
 			String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
 			log.info("反欺诈回调成功,返回:"+callBackCredit);
+			if(("").equals(callBackCredit)){
+				reader.close();
+				// 断开连接
+				connection.disconnect();
+				return false;
+			}else {
 			reader.close();
 			// 断开连接
 			connection.disconnect();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return true;
 	}
 }

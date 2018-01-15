@@ -60,9 +60,9 @@ public class FraudController {
 	private FraudService fraudService;
 
 	@JmsListener(destination = "${queue.fraudArchiveBuffer.destination}", concurrency = "${queue.fraudArchiveBuffer.concurrency}")
-	public void bufferQueueConsumer(String reqSerial) {
-		String json = fraudRedisTemplate.opsForValue().get(reqSerial);
-		log.info(reqSerial +"反欺诈进入JSON数据,第一步:" + json);
+	public void bufferQueueConsumer(String flowno) {
+		String json = fraudRedisTemplate.opsForValue().get(flowno);
+		log.info(flowno + "反欺诈进入JSON数据,第一步:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -81,20 +81,20 @@ public class FraudController {
 				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);
 				String processJson = JSON.toJSONString(user);
-				String businessNo = "fraud"+userCredit.getBusinessNo();
+				String businessNo = "fraud" + userCredit.getBusinessNo();
 				fraudRedisTemplate.opsForValue().set(businessNo, processJson);
 				fraudJmsMessagingTemplate.convertAndSend(fraudArchiveProcessQueue, businessNo);
 			}
-			 fraudRedisTemplate.delete(reqSerial);
+			fraudRedisTemplate.delete(flowno);
 		}
-		
+
 	}
 
 	@JmsListener(destination = "${queue.fraudArchiveProcess.destination}", concurrency = "${queue.fraudArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
 
 		String json = fraudRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo+"反欺诈处理的单条记录,第二步" + json);
+		log.info(businessNo + "反欺诈处理的单条记录,第二步" + json);
 		CallBackUserCreditModel cm = fraudService.fraudContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
 		fraudRedisTemplate.opsForValue().set(businessNo, callbackjson);
@@ -106,11 +106,18 @@ public class FraudController {
 	public void callbackQueueConsumer(String businessNo) {
 		String content = fraudRedisTemplate.opsForValue().get(businessNo);
 		// 回调信贷
-		log.info(businessNo+"：反欺诈处理回调，第三步："+content);
-		fraudService.fraudCallBack(content);
-		//fraudRedisTemplate.delete(businessNo);
-		log.info(businessNo + "反欺诈结束处理完成，已从redis队列删除");
-
+		log.info(businessNo + "：反欺诈处理回调，第三步：" + content);
+		boolean a = false;
+		for (int i = 0; i < 3; i++) {
+			a = fraudService.fraudCallBack(content);
+			if (a == true) {
+				fraudRedisTemplate.delete(businessNo);
+				log.info(businessNo + "征信结束处理完成，已从redis队列删除。请求成功");
+				break;
+			} else {
+				a = false;
+			}
+		}
 	}
 
 	@RequestMapping(value = "/independentAudit")
