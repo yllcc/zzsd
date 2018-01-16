@@ -54,7 +54,7 @@ public class FraudService {
 	@Value("${hd.fraud.channelId}")
 	private String channelId;// 渠道号11009028
 
-	@Value("${hd.fraud.hdChannelId }")
+	@Value("${hd.fraud.hdChannelId}")
 	private String hdChannelId;// 渠道号11000000
 
 	@Value("${hd.fraud.application}")
