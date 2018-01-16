@@ -55,10 +55,15 @@ public class FraudController {
 	@Autowired
 	private FraudService fraudService;
 
+	/**
+	 * 根据外围流水号获取整个记录，进行拆分单个
+	 * 
+	 * @param flownNo
+	 */
 	@JmsListener(destination = "${queue.fraudArchiveBuffer.destination}", concurrency = "${queue.fraudArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String flowno) {
 		String json = fraudRedisTemplate.opsForValue().get(flowno);
-		log.info(flowno + "反欺诈进入JSON数据,第一步:" + json);
+		log.info(flowno + "反欺诈,第一步:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -85,23 +90,31 @@ public class FraudController {
 		}
 	}
 
+	/**
+	 * 对单个记录进行业务处理
+	 * 
+	 * @param businessNo
+	 */
 	@JmsListener(destination = "${queue.fraudArchiveProcess.destination}", concurrency = "${queue.fraudArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
-
 		String json = fraudRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo + "反欺诈处理的单条记录,第二步" + json);
+		log.info(businessNo + "反欺诈,第二步" + json);
 		CallBackUserCreditModel cm = fraudService.fraudContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
 		fraudRedisTemplate.opsForValue().set(businessNo, callbackjson);
 		fraudJmsMessagingTemplate.convertAndSend(fraudArchiveCallbackQueue, businessNo);
-
 	}
 
+	/**
+	 * 业务处理完成。进入callbackQueue队列，回调信贷。
+	 * 
+	 * @param businessNo
+	 */
 	@JmsListener(destination = "${queue.fraudArchiveCallback.destination}", concurrency = "${queue.fraudArchiveCallback.concurrency}")
 	public void callbackQueueConsumer(String businessNo) {
 		String content = fraudRedisTemplate.opsForValue().get(businessNo);
-		// 回调信贷
-		log.info(businessNo + "：反欺诈处理回调，第三步：" + content);
+		// 回调信贷,有可能存在回调信贷，信贷没有及时接收到。信贷没有接受成功，默认回调三次。
+		log.info(businessNo + "：反欺回调,第三步：" + content);
 		boolean a = false;
 		for (int i = 0; i < 3; i++) {
 			a = fraudService.fraudCallBack(content);
@@ -115,6 +128,13 @@ public class FraudController {
 		}
 	}
 
+	/**
+	 * 信贷反欺诈入口
+	 * 
+	 * @param request
+	 * @return
+	 * @throws IOException
+	 */
 	@RequestMapping(value = "/independentAudit")
 	@ResponseBody
 	private UserCreditReturnModel independentAudit(HttpServletRequest request) throws IOException {

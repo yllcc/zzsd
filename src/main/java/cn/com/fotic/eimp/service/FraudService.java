@@ -80,7 +80,6 @@ public class FraudService {
 	
 
 	public static final String FRAUD_FLOWNO = "flowNo";
-	public static final String FRAUD_ZERO = "0";
 	public static final String FRAUD_DATA = "data";
 	public static final String FRAUD_SUCCESS = "0000";
 	public static final String FRAUD_RESCODE = "resCode";
@@ -94,7 +93,6 @@ public class FraudService {
 	 * @return
 	 */
 	public CallBackUserCreditModel fraudContentService(String creditjson) {
-
 		CallBackUserCreditModel cs = new CallBackUserCreditModel();
 		CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
 		List<CallBackUserCreditContentModel> csclist = new ArrayList<CallBackUserCreditContentModel>();
@@ -109,6 +107,7 @@ public class FraudService {
 		// 1.生成xml
 		String xml = this.HdFraudService(idNo, custName);
 		// 2.进行数据加密,发送数据给韩迪hd.fraud.channelId
+		log.info("接口请求上送的:"+xml);
 		try {
 			HdCreditReturnModel r = this.hdCreditService(xml);
 			CreditFraudDic cpd = new CreditFraudDic();
@@ -198,7 +197,7 @@ public class FraudService {
 		String returnXml = new String(Base64Utils.encode(hdChannelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
 		String xmlArr[] = reutrnResult.split("\\|");
-		if (xmlArr[0].equals(FRAUD_ZERO)) {
+		if (xmlArr[0].equals("0")) {
 			String resMsg = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
 			hrm.setResMsg(resMsg);
 			return hrm;
@@ -244,7 +243,6 @@ public class FraudService {
 	 * @param fraudScore
 	 */
 	public boolean fraudCallBack(String fraudjson) {
-		log.info("反欺诈接口回调" + fraudjson);
 		return this.callBackFraud(fraudjson);
 	}
 

@@ -367,6 +367,7 @@ public class CreditService {
 			// 将人行视图存入本地数据库
 			cm.setScore(score);
 			this.savecredit(cm);
+			log.info("本地入库成功,本地分数:"+score);
 			return score;
 		}
 	}
@@ -377,7 +378,6 @@ public class CreditService {
 	 * @param json
 	 */
 	public boolean creditCallBack(String json) {
-		log.info("征信回调征信接口：" + json);
 		return this.callBackCredit(json);
 	}
 

@@ -54,10 +54,14 @@ public class CustomerScoreController {
 	@Autowired
 	private CreditService creditService;
 
+	/**
+	 * 根据外围流水号获取整个记录，进行拆分单个
+	 * 
+	 * @param flownNo
+	 */
 	@JmsListener(destination = "${queue.creditArchiveBuffer.destination}", concurrency = "${queue.creditArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String flownNo) {
 		String json = creditRedisTemplate.opsForValue().get(flownNo);
-		log.info(flownNo + "征信流水号JSON数据,第一步:" + json);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");
@@ -84,11 +88,16 @@ public class CustomerScoreController {
 		}
 	}
 
+	/**
+	 * 对单个记录进行业务处理
+	 * 
+	 * @param businessNo
+	 */
 	@JmsListener(destination = "${queue.creditArchiveProcess.destination}", concurrency = "${queue.creditArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
 
 		String json = creditRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo + "：征信处理单条记录,第二步：" + json);
+		log.info(businessNo + "：征信,第二步：" + json);
 		CallBackCustomerScoreModel cm = creditService.creditContentService(json);
 		String callbackjson = JSON.toJSONString(cm);
 		creditRedisTemplate.opsForValue().set(businessNo, callbackjson);
@@ -96,11 +105,16 @@ public class CustomerScoreController {
 
 	}
 
+	/**
+	 * 业务处理完成。进入callbackQueue队列，回调信贷。
+	 * 
+	 * @param businessNo
+	 */
 	@JmsListener(destination = "${queue.creditArchiveCallback.destination}", concurrency = "${queue.creditArchiveCallback.concurrency}")
 	public void callbackQueueConsumer(String businessNo) {
 		String content = creditRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo + "：征信业务处理回调，第三步：" + content);
-		// 回调信贷
+		log.info(businessNo + "：征信回调，第三步：" + content);
+		// 回调信贷,有可能存在回调信贷，信贷没有及时接收到。信贷没有接受成功，默认回调三次。
 		boolean a = false;
 		for (int i = 0; i < 3; i++) {
 			a = creditService.creditCallBack(content);
@@ -114,6 +128,13 @@ public class CustomerScoreController {
 		}
 	}
 
+	/**
+	 * 信贷评分入口
+	 * 
+	 * @param request
+	 * @return
+	 * @throws IOException
+	 */
 	@RequestMapping(value = "/customerScore")
 	@ResponseBody
 	private UserCreditReturnModel customerScore(HttpServletRequest request) throws IOException {

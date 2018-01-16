@@ -73,6 +73,7 @@ public class CreditPersonalService {
 		// requestModel.setMobile("18693152204");
 		// requestModel.setCardNo("622301199002040312");
 		String xmlReq = JaxbUtil.convertToXml(requestModel);
+		log.info("接口请求上送的:"+xmlReq);
 		return xmlReq;
 	}
 
