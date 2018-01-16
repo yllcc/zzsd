@@ -58,6 +58,8 @@ public class BankCredit {
 	private String  rateRecentlyOpencardLimit;//最近开户贷记卡额度
 	@Column(name="RATE_FIRSTNOACCOUNT_CARDAGE")
 	private String rateFirstnoaccountCardage ;//最早未销户贷记卡卡龄
+	@Column(name="SCORE")
+	private String SCORE;//分数
 	@Column(name="APPLY_TIME")
 	private Date applyTime;//申请时间
 	@Column(name="APPLY_PERSON")
