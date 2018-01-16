@@ -15,7 +15,7 @@ import javax.net.ssl.HttpsURLConnection;
  *
  */
 public class HttpUtil {
-
+	
 	private static SslContextUtils sslContextUtils = new SslContextUtils();
 
 	public static String sendXMLDataByPost(String postUrl, String xmlData) {
@@ -27,7 +27,6 @@ public class HttpUtil {
 			if (httpConn instanceof HttpsURLConnection) {
 				sslContextUtils.initHttpsConnect((HttpsURLConnection) httpConn);
 			}
-
 			httpConn.setRequestMethod("POST");
 			httpConn.setDoOutput(true);
 			httpConn.setDoInput(true);
@@ -49,10 +48,7 @@ public class HttpUtil {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-			// } catch (NoSuchAlgorithmException e) {
-			// e.printStackTrace();
 		}
 		return sb.toString();
 	}
-
 }

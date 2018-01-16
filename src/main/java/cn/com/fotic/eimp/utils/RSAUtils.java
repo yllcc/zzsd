@@ -28,7 +28,6 @@ public class RSAUtils {
 	public static final String KEY_ALGORITHM = "RSA";
 	public static final String PUBLIC_KEY = "RSAPublicKey";
 	public static final String PRIVATE_KEY = "RSAPrivateKey";
-
 	private static final int KEY_SIZE = 512;
 
 	// 私钥解密
@@ -53,10 +52,8 @@ public class RSAUtils {
 		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(key);
 		KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
 		PublicKey publicKey = keyFactory.generatePublic(x509KeySpec);
-
 		Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 		cipher.init(Cipher.DECRYPT_MODE, publicKey);
-
 		return cipher.doFinal(data);
 	}
 	// 公钥解密2
@@ -118,15 +115,11 @@ public class RSAUtils {
 	}
 	//初始化密
 	public static Map<String,Object> initKey() throws Exception{
-		KeyPairGenerator keyPairGen =KeyPairGenerator.getInstance(KEY_ALGORITHM);
-		
-		keyPairGen.initialize(KEY_SIZE);
-		
-		KeyPair keyPair=keyPairGen.generateKeyPair();
-		
+		KeyPairGenerator keyPairGen =KeyPairGenerator.getInstance(KEY_ALGORITHM);		
+		keyPairGen.initialize(KEY_SIZE);		
+		KeyPair keyPair=keyPairGen.generateKeyPair();		
 		RSAPublicKey publicKey=(RSAPublicKey)keyPair.getPublic();
-		RSAPrivateKey privateKey=(RSAPrivateKey)keyPair.getPrivate();
-		
+		RSAPrivateKey privateKey=(RSAPrivateKey)keyPair.getPrivate();		
 		Map<String,Object> keyMap =new HashMap<String,Object>(2);
 		keyMap.put(PUBLIC_KEY,publicKey);
 		keyMap.put(PRIVATE_KEY,privateKey);
@@ -158,10 +151,8 @@ public class RSAUtils {
 	    String[] mps;
 		try {
 			mps = readModulusAndPublicExponent(publicKey);
-		
 	    System.out.println("model:"+mps[0]);
-	    System.out.println("publicExponent:"+mps[1]);
-	    
+	    System.out.println("publicExponent:"+mps[1]);    
 	    String data = "11111111111111111111111111";
 		System.out.print(Base64.getEncoder().encodeToString(ThreeDESUtils.encrypt(data.getBytes(), data.getBytes())));
 		} catch (Exception e1) {

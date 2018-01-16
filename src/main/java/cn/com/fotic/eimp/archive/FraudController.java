@@ -1,10 +1,7 @@
 package cn.com.fotic.eimp.archive;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import javax.jms.Queue;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +14,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-
 import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
@@ -87,7 +83,6 @@ public class FraudController {
 			}
 			fraudRedisTemplate.delete(flowno);
 		}
-
 	}
 
 	@JmsListener(destination = "${queue.fraudArchiveProcess.destination}", concurrency = "${queue.fraudArchiveProcess.concurrency}")
@@ -126,12 +121,13 @@ public class FraudController {
 		// 1.校验数据
 		String requestJson = creditService.longinHttep(request);
 		UserCreditReturnModel um = creditService.verificationCredit(requestJson);
-		if ("01" == um.getReCode()) {
+		if ("01".equals(um.getReCode())) {
 			// 2.获取流水号
 			String flowno = creditService.flownNo(requestJson);
 			// 3.返回队列(JSON,流水号)
 			fraudRedisTemplate.opsForValue().set(flowno, requestJson);
 			fraudJmsMessagingTemplate.convertAndSend(fraudArchiveBufferQueue, flowno);
+			return um;
 		}
 		return um;
 	}

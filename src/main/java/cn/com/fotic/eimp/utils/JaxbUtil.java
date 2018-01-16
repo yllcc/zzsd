@@ -16,9 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author liugj
  */
 public class JaxbUtil {
-	
+
 	public static ObjectMapper objectMapper;
-	
+
 	/**
 	 * JavaBean转换成xml 默认编码UTF-8
 	 * 
@@ -71,6 +71,7 @@ public class JaxbUtil {
 		}
 		return t;
 	}
+
 	/**
 	 * 把JavaBean转换为json字符串
 	 * 
@@ -78,7 +79,7 @@ public class JaxbUtil {
 	 * @return
 	 */
 	public static String toJSon(Object object) {
-		
+
 		if (objectMapper == null) {
 			objectMapper = new ObjectMapper();
 		}
@@ -91,6 +92,7 @@ public class JaxbUtil {
 
 		return null;
 	}
+
 	/**
 	 * 使用泛型方法，把json字符串转换为相应的JavaBean对象。
 	 * (1)转换为普通JavaBean：readValue(json,Student.class)
@@ -114,9 +116,10 @@ public class JaxbUtil {
 
 		return null;
 	}
-   /**
-    * 生成随机字符串
-    */
+
+	/**
+	 * 生成随机字符串
+	 */
 	public static String getRandomStringByLength(int length) {
 		String base = "abcdefghijklmnopqrstuvwxyz0123456789";
 		Random random = new Random();

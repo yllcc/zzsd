@@ -12,17 +12,14 @@ import java.util.Base64;
  *
  */
 public class Md5Utils {
-
 	private Md5Utils() {
 	}
-
 	public static String md5ToBas64(String data) {
 		MessageDigest md = null;
 		String str = null;
 		try {
 			md = MessageDigest.getInstance("MD5");
-			str = new String(Base64.getEncoder().encode(
-					md.digest(data.getBytes("UTF-8"))), "UTF-8");
+			str = new String(Base64.getEncoder().encode(md.digest(data.getBytes("UTF-8"))), "UTF-8");
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -70,11 +67,8 @@ public class Md5Utils {
 	}
 
 	public static void main(String[] args) throws UnsupportedEncodingException {
-		String digest= md5ToBas64("中国阿萨德");
-        /*String dd=getMd5Hex1("中国阿萨德");
-        System.out.println(dd);
-        System.out.println(dd.length());
-        */System.out.println(digest);
-        System.out.println(digest.length());
+		String digest = md5ToBas64("中国阿萨德");
+		System.out.println(digest);
+		System.out.println(digest.length());
 	}
 }

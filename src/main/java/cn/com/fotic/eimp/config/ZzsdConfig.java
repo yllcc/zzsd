@@ -1,7 +1,5 @@
 package cn.com.fotic.eimp.config;
 
-
-
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,5 +21,5 @@ public class ZzsdConfig {
 		ppc.setLocations(new ClassPathResource("/config.properties"));
 		return ppc;
 	}
-  
+
 }

@@ -13,9 +13,6 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,7 +20,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
-import cn.com.fotic.eimp.model.HdCreditReturnModel;
 import cn.com.fotic.eimp.model.HdCreditScoreContentModel;
 import cn.com.fotic.eimp.model.HdCreditScoreModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
@@ -52,6 +48,9 @@ public class CreditService {
 
 	@Value("${xd.crediturl}")
 	private String callbackcrediturl;
+	
+	@Value("${hd.creditDefault.score}")
+	private String score;
 
 	@Autowired
 	private BackCreditRepository backCreditRepository;
@@ -65,42 +64,53 @@ public class CreditService {
 	@Autowired
 	private CreditPersonalRepository creditPersonalRepository;
 
+	public static final String CREDIT_CONTENT = "content";
+	public static final String CREDIT_ERRORCODE = "02";
+	public static final String CREDIT_ERRORMSG = "证件号或证件类型校验失败";
+	public static final String CREDIT_ERRORCODE1 = "03";
+	public static final String CREDIT_ERRORMSG1 = "上送的格式不对，不是一个数组";
+	public static final String CREDIT_SUCCESSCODE = "01";
+	public static final String CREDIT_SUCCESSMSG = "成功";
+	public static final String CREDIT_FLOWNO = "flowNo";
+	public static final String CREDIT_NAN = "NaN";
+	public static final String CREDIT_ZERO = "0";
+	public static final String CREDIT_ONE = "1";
+	public static final String CREDIT_TWO = "2";
+	public static final String CREDIT_TRUE = "true";
+	public static final String CREDIT_HDSUCCESS = "0000";
+	public static final String CREDIT_EMPTY = "";
+
 	/**
 	 * 信贷征信入口
 	 * 
 	 * @param creditjson
 	 * @return
+	 * 
 	 */
 	public CallBackCustomerScoreModel creditContentService(String creditjson) {
-
-		if (creditjson.equals(null)) {
-			return null;
-		} else {
-			CallBackCustomerScoreModel cs = new CallBackCustomerScoreModel();
-			CallBackCustomerScoreContentModel csc = new CallBackCustomerScoreContentModel();
-			List<CallBackCustomerScoreContentModel> csclist = new ArrayList<CallBackCustomerScoreContentModel>();
-			UserCreditQueneModel user = JaxbUtil.readValue(creditjson, UserCreditQueneModel.class);
-			String businessNo = user.getBusinessNo();
-			String idType = user.getIdType();
-			String idNo = user.getIdNo();
-			String custName = user.getCustName();
-			String phoneNo = user.getPhoneNo();
-			String flowNo = user.getFlowNo();
-			try {
-				String score = this.saveInformation(flowNo, businessNo, custName, idType, idNo, phoneNo);
-				csc.setBusinessNo(businessNo);
-				csc.setCustomScoree(score);
-				csclist.add(csc);
-				cs.setContent(csclist);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			cs.setAccessToken(user.getAccessToken());
-			cs.setReqTime(user.getReqTime());
-			cs.setFlowNo(user.getFlowNo());
-			return cs;
+		CallBackCustomerScoreModel cs = new CallBackCustomerScoreModel();
+		CallBackCustomerScoreContentModel csc = new CallBackCustomerScoreContentModel();
+		List<CallBackCustomerScoreContentModel> csclist = new ArrayList<CallBackCustomerScoreContentModel>();
+		UserCreditQueneModel user = JaxbUtil.readValue(creditjson, UserCreditQueneModel.class);
+		String businessNo = user.getBusinessNo();
+		String idType = user.getIdType();
+		String idNo = user.getIdNo();
+		String custName = user.getCustName();
+		String phoneNo = user.getPhoneNo();
+		String flowNo = user.getFlowNo();
+		try {
+			String score = this.saveInformation(flowNo, businessNo, custName, idType, idNo, phoneNo);
+			csc.setBusinessNo(businessNo);
+			csc.setCustomScoree(score);
+			csclist.add(csc);
+			cs.setContent(csclist);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		cs.setAccessToken(user.getAccessToken());
+		cs.setReqTime(user.getReqTime());
+		cs.setFlowNo(user.getFlowNo());
+		return cs;
 	}
 
 	/**
@@ -161,8 +171,8 @@ public class CreditService {
 		UserCreditReturnModel um = new UserCreditReturnModel();
 		JSONObject jsonObject = JSON.parseObject(json);
 		// 判断是否存在content
-		if (jsonObject.containsKey("content")) {
-			String value = jsonObject.getString("content");
+		if (jsonObject.containsKey(CREDIT_CONTENT)) {
+			String value = jsonObject.getString(CREDIT_CONTENT);
 			List<UserCreditContentModel> contentList = JSON.parseArray(value, UserCreditContentModel.class);
 			for (UserCreditContentModel user : contentList) {
 				String idType = user.getIdType();
@@ -170,20 +180,18 @@ public class CreditService {
 				String custName = user.getCustName();
 				boolean verification = this.VerificationService(custName, idNo, idType);
 				if (verification != true) {
-					um.setReCode("02");
-					um.setReDesc("证件号或证件类型校验失败");
-					log.info("证件号或证件类型校验失败");
+					um.setReCode(CREDIT_ERRORCODE);
+					um.setReDesc(CREDIT_ERRORMSG);
 					return um;
 				}
 			}
-			um.setReCode("01");
-			um.setReDesc("成功");
+			um.setReCode(CREDIT_SUCCESSCODE);
+			um.setReDesc(CREDIT_SUCCESSMSG);
 			log.info("校验成功");
 			return um;
 		} else {
-			um.setReCode("03");
-			um.setReDesc("上送的格式不对，不是一个数组");
-			log.info("上送的格式不对，不是一个数组");
+			um.setReCode(CREDIT_ERRORCODE1);
+			um.setReDesc(CREDIT_ERRORMSG1);
 			return um;
 		}
 	}
@@ -196,26 +204,8 @@ public class CreditService {
 	 */
 	public String flownNo(String json) {
 		JSONObject jsonObject = JSON.parseObject(json);
-		String flowNo = jsonObject.getString("flowNo");
+		String flowNo = jsonObject.getString(CREDIT_FLOWNO);
 		return flowNo;
-	}
-
-	/**
-	 * xml 错误解析
-	 * 
-	 * @param xml
-	 * @return
-	 */
-	public static String readRespMsg(String xml) {
-		if (StringUtils.isEmpty(xml)) {
-			return "未知";
-		}
-		try {
-			Element ele = DocumentHelper.parseText(xml).getRootElement();
-			return ele.elementText("respDesc");
-		} catch (DocumentException e) {
-			return "未知2";
-		}
 	}
 
 	/**
@@ -248,8 +238,9 @@ public class CreditService {
 			um.setRateFirstnoaccountCardage(cm.getRate_firstnoaccount_cardage());
 			um.setRateFiveyearMaxoverdueCount(cm.getRate_fiveyear_maxoverdue_count());
 			String rllr = cm.getRate_loanoff_loanopen_ratio();
-			if ("NaN".equals(rllr)) {
-				um.setRateLoanoffLoanopenRatio("0");
+			// 人行视图返回的rate_loanoff_loanopen_ratio字段存在NAN值，需要进行判断，默认为0
+			if (CREDIT_NAN.equals(rllr)) {
+				um.setRateLoanoffLoanopenRatio(CREDIT_ZERO);
 			} else {
 				um.setRateLoanoffLoanopenRatio(rllr);
 			}
@@ -286,7 +277,6 @@ public class CreditService {
 	 */
 	public CreditPersonalDic sendHdPost(String flowNo, String businessNo, String cust_name, String cert_type,
 			String cert_num, String phoneNo) throws Exception {
-		log.info("征信发送翰迪http请求查询征信.......");
 		UserCreditQueneModel user = new UserCreditQueneModel();
 		CreditPersonalDic cpd = new CreditPersonalDic();
 		user.setBusinessNo(businessNo);
@@ -303,56 +293,48 @@ public class CreditService {
 		cpd.setCustName(cust_name);
 		cpd.setCertType(cert_type);
 		cpd.setPhone(phoneNo);
-		if (("未查到数据").equals(returnxml) && ("系统异常").equals(returnxml)) {
-			cpd.setScore("373");
-			cpd.setResponseBody(returnxml);
-			creditPersonalRepository.save(cpd);
-			return cpd;
-		} else {
+		if (!"".equals(returnxml) || null != returnxml) {
 			HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
-			if (hm != null) {
-				if (hm.getResData() != null) {
-					HdCreditScoreContentModel resData = hm.getResData();
-					String istargeted = resData.getIs_targeted();
-					if (StringUtils.isNotBlank(istargeted)) {
-						if ("TRUE".equals(istargeted)) {
-							String isTargeted = "1";
-							cpd.setIsTargert(isTargeted);
-						} else {
-							String isTargeted = "2";
-							cpd.setIsTargert(isTargeted);
-						}
-					}
-					if ("0000".equals(hm.getResCode())) {
-						cpd.setCreditScore(hm.getResData().getScore());
-						cpd.setStability(hm.getResData().getStability());
-						cpd.setBuyingIndex(hm.getResData().getBuyingIndex());
-						cpd.setRiskIndex(hm.getResData().getRiskIndex());
-						cpd.setPerformanceIndex(hm.getResData().getPerformanceIndex());
-						cpd.setResonableConsuming(hm.getResData().getResonableConsuming());
-						cpd.setCity(hm.getResData().getCity());
-						cpd.setComsumSocial(hm.getResData().getComsumingSocial());
-						cpd.setIncome(hm.getResData().getIncomming());
-						cpd.setCellPhone_preference(hm.getResData().getCellphonePreference());
-						cpd.setEcommerceActiveness(hm.getResData().getEcommerceActiveness());
-						cpd.setEcommerceAddressStability(hm.getResData().getEcommerceAddressStability());
-						cpd.setEcommerceCellPhoneStability(hm.getResData().getEcommercecellphoneStability());
-						cpd.setEcommerceAccountHistory(hm.getResData().getEcommerceAccountHistory());
-						cpd.setCashPreference(hm.getResData().getCellphonePreference());
-						cpd.setRiskPeriodPayment(hm.getResData().getRiskPeriodPayment());
-						cpd.setRiskCategoryPayment(hm.getResData().getRiskCategoryPayment());
-						cpd.setScore(SumUtil.getCreditScore(hm.getResData().getScore()));
-						cpd.setResponseBody(returnxml);
-						log.info("征信韩迪返回入库成功:分数：" + hm.getResData().getScore());
+			if (CREDIT_HDSUCCESS.equals(hm.getResCode())) {
+				cpd.setCreditScore(hm.getResData().getScore());
+				cpd.setStability(hm.getResData().getStability());
+				cpd.setBuyingIndex(hm.getResData().getBuyingIndex());
+				cpd.setRiskIndex(hm.getResData().getRiskIndex());
+				cpd.setPerformanceIndex(hm.getResData().getPerformanceIndex());
+				cpd.setResonableConsuming(hm.getResData().getResonableConsuming());
+				cpd.setCity(hm.getResData().getCity());
+				cpd.setComsumSocial(hm.getResData().getComsumingSocial());
+				cpd.setIncome(hm.getResData().getIncomming());
+				cpd.setCellPhone_preference(hm.getResData().getCellphonePreference());
+				cpd.setEcommerceActiveness(hm.getResData().getEcommerceActiveness());
+				cpd.setEcommerceAddressStability(hm.getResData().getEcommerceAddressStability());
+				cpd.setEcommerceCellPhoneStability(hm.getResData().getEcommercecellphoneStability());
+				cpd.setEcommerceAccountHistory(hm.getResData().getEcommerceAccountHistory());
+				cpd.setCashPreference(hm.getResData().getCellphonePreference());
+				cpd.setRiskPeriodPayment(hm.getResData().getRiskPeriodPayment());
+				cpd.setRiskCategoryPayment(hm.getResData().getRiskCategoryPayment());
+				cpd.setScore(SumUtil.getCreditScore(hm.getResData().getScore()));
+				cpd.setResponseBody(returnxml);
+				HdCreditScoreContentModel resData = hm.getResData();
+				// istargeted,true值为1，false值为2
+				String istargeted = resData.getIs_targeted();
+				if (StringUtils.isNotBlank(istargeted)) {
+					if (CREDIT_TRUE.equals(istargeted)) {
+						String isTargeted = CREDIT_ONE;
+						cpd.setIsTargert(isTargeted);
 					} else {
-						cpd.setScore("373");
-						cpd.setResponseBody(returnxml);
+						String isTargeted = CREDIT_TWO;
+						cpd.setIsTargert(isTargeted);
 					}
 				}
+				log.info("征信韩迪返回入库成功:分数：" + hm.getResData().getScore());
 			} else {
-				cpd.setScore("373");
+				cpd.setScore(score);
 				cpd.setResponseBody(returnxml);
 			}
+		} else {
+			cpd.setScore(score);
+			cpd.setResponseBody(returnxml);
 		}
 		creditPersonalRepository.save(cpd);
 		return cpd;
@@ -372,21 +354,19 @@ public class CreditService {
 	 */
 	public String saveInformation(String flowNo, String businessNo, String cust_name, String cert_type, String cert_num,
 			String phoneNo) throws Exception {
-
 		BankCredit cm = this.creditOracle(businessNo, cust_name, cert_type, cert_num, phoneNo);
 		if (null == cm) {
-			CreditPersonalDic returnxml = this.sendHdPost(flowNo, businessNo, cust_name, cert_type, cert_num, phoneNo);
 			// 查询韩迪返回的数据进行解析评分
+			CreditPersonalDic returnxml = this.sendHdPost(flowNo, businessNo, cust_name, cert_type, cert_num, phoneNo);
 			String score = returnxml.getScore();
-			//
-			log.info(businessNo + "：征信人行返回的分数：" + score);
 			return score;
 		} else {
-			this.savecredit(cm);
 			// 查询人行的数据的数据进行解析评分
 			int sum = SumUtil.countScore(cm);
 			String score = String.valueOf(sum);
-			log.info(businessNo + "：征信人行返回的分数:" + score);
+			// 将人行视图存入本地数据库
+			cm.setScore(score);
+			this.savecredit(cm);
 			return score;
 		}
 	}
@@ -428,14 +408,14 @@ public class CreditService {
 			// 读取响应
 			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			String lines;
-			StringBuffer sb = new StringBuffer("");
+			StringBuffer sb = new StringBuffer(CREDIT_EMPTY);
 			while ((lines = reader.readLine()) != null) {
 				lines = new String(lines.getBytes(), "utf-8");
 				sb.append(lines);
 			}
 			String callBackCredit = URLDecoder.decode(sb.toString(), "utf-8");
 			log.info("征信回调成功,返回:" + callBackCredit);
-			if (("").equals(callBackCredit)) {
+			if (CREDIT_EMPTY.equals(callBackCredit)) {
 				reader.close();
 				// 断开连接
 				connection.disconnect();
@@ -449,6 +429,5 @@ public class CreditService {
 			e.printStackTrace();
 		}
 		return true;
-
 	}
 }
