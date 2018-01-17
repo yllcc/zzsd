@@ -120,7 +120,7 @@ public class FraudController {
 			a = fraudService.fraudCallBack(content);
 			if (a == true) {
 				fraudRedisTemplate.delete(businessNo);
-				log.info(businessNo + "征信结束处理完成，已从redis队列删除。请求成功");
+				log.info(businessNo + "征信结束处理完成，已从redis队列删除。");
 				break;
 			} else {
 				a = false;
