@@ -63,7 +63,7 @@ public class FraudController {
 	@JmsListener(destination = "${queue.fraudArchiveBuffer.destination}", concurrency = "${queue.fraudArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String flowno) {
 		String json = fraudRedisTemplate.opsForValue().get(flowno);
-		log.info(flowno + "反欺诈,第一步:" + json);
+		log.info(flowno + "反欺诈,第一步");
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
 		String accessToken = jsonObject.getString("accessToken");

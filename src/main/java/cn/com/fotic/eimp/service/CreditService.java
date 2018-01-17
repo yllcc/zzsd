@@ -285,7 +285,6 @@ public class CreditService {
 		user.setPhoneNo(phoneNo);
 		String xml = creditPersonalService.getCreditRequestXml(user);
 		String returnxml = creditPersonalService.sendHdCredit(xml);
-		log.info("征信翰迪返回：" + returnxml);
 		cpd.setApplyNum(businessNo);
 		cpd.setSerialNo(flowNo);
 		cpd.setBusinessNo(businessNo);

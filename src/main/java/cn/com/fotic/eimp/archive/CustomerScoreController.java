@@ -55,15 +55,17 @@ public class CustomerScoreController {
 	private CreditService creditService;
 
 	/**
-	 * 根据外围流水号获取整个记录，进行拆分单个
+	 * 根据外围流水号获取整个记录，进行拆分为单个
 	 * 
 	 * @param flownNo
 	 */
 	@JmsListener(destination = "${queue.creditArchiveBuffer.destination}", concurrency = "${queue.creditArchiveBuffer.concurrency}")
 	public void bufferQueueConsumer(String flownNo) {
+		
 		String json = creditRedisTemplate.opsForValue().get(flownNo);
 		JSONObject jsonObject = JSON.parseObject(json);
 		String flowNo = jsonObject.getString("flowNo");
+		log.info(flowNo + "客户评分,第一步");
 		String accessToken = jsonObject.getString("accessToken");
 		String reqTime = jsonObject.getString("reqTime");
 		if (jsonObject.containsKey("content")) {

@@ -8,7 +8,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
+
 import cn.com.fotic.eimp.model.HdCreditRequestModel;
+import cn.com.fotic.eimp.model.HdCreditScoreModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.utils.Base64Utils;
 import cn.com.fotic.eimp.utils.HttpUtil;
@@ -68,10 +71,6 @@ public class CreditPersonalService {
 		requestModel.setCid(model.getIdNo());
 		requestModel.setMobile(model.getPhoneNo());
 		requestModel.setCardNo("");// 银行卡号 选填
-		// requestModel.setName("张三");
-		// requestModel.setCid("120101199801017858");
-		// requestModel.setMobile("18693152204");
-		// requestModel.setCardNo("622301199002040312");
 		String xmlReq = JaxbUtil.convertToXml(requestModel);
 		log.info("接口请求上送的:"+xmlReq);
 		return xmlReq;
@@ -91,16 +90,18 @@ public class CreditPersonalService {
 		// BASE64(3DES(报文原文))
 		String desXml = new String(
 				Base64Utils.encode(ThreeDESUtils.encrypt(requestXml.toString().getBytes("utf-8"), mkey.getBytes())));
-
 		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
 		String returnXml = new String(Base64Utils.encode(channelId.getBytes("utf-8"))) + "|" + rsaXml + "|" + desXml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
 		String errormsg = "";
 		if (StringUtils.isNotEmpty(reutrnResult)) {
 			String xmlArr[] = reutrnResult.split("\\|");
-
 			if ("0".equals(xmlArr[0])) {
-				errormsg = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
+				String error=new String(Base64Utils.decode(xmlArr[2]), "utf-8");
+				HdCreditScoreModel hm =new HdCreditScoreModel();
+				hm.setResCode("02");
+				hm.setResMsg(error);
+				errormsg=JSON.toJSONString(hm);
 				return errormsg;
 			} else {
 				byte[] reponseByte = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
@@ -111,7 +112,10 @@ public class CreditPersonalService {
 				return reponseXml;
 			}
 		} else {
-			errormsg = "未接收到返回信息";
+			HdCreditScoreModel hm =new HdCreditScoreModel();
+			hm.setResCode("01");
+			hm.setResMsg("未接收到返回信息");
+			errormsg=JSON.toJSONString(hm);
 			log.info(errormsg);
 			return errormsg;
 		}

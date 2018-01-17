@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -117,7 +119,7 @@ public class FraudService {
 				cpd.setFraudScore(fraudScore);
 			} else {
 				// 韩迪返回查询错误信息
-				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResCode() + r.getResMsg());
+				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResMsg());
 				cpd.setFraudScore(score);
 			}
 			cpd.setBusinessNo(businessNo);
@@ -196,10 +198,12 @@ public class FraudService {
 				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
 		String returnXml = new String(Base64Utils.encode(hdChannelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
 		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
+		if (StringUtils.isNotEmpty(reutrnResult)) {
 		String xmlArr[] = reutrnResult.split("\\|");
 		if (xmlArr[0].equals("0")) {
-			String resMsg = new String(Base64Utils.decode(xmlArr[2]), "utf-8");
-			hrm.setResMsg(resMsg);
+			String error=new String(Base64Utils.decode(xmlArr[2]), "utf-8");
+			hrm.setResCode("01");
+			hrm.setResMsg(error);
 			return hrm;
 		} else {
 			byte[] b = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
@@ -232,8 +236,13 @@ public class FraudService {
 				hrm.setResCode(resCode);
 				hrm.setResMsg(resMsg);
 			}
+		}
+		}else {
+			hrm.setResCode("02");
+			hrm.setResMsg("未接收到返回信息");
 			return hrm;
 		}
+		return hrm;
 	}
 
 	/**
