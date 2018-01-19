@@ -285,6 +285,7 @@ public class CreditService {
 		user.setPhoneNo(phoneNo);
 		String xml = creditPersonalService.getCreditRequestXml(user);
 		String returnxml = creditPersonalService.sendHdCredit(xml);
+		log.info("韩迪返回的数据:"+returnxml);
 		cpd.setApplyNum(businessNo);
 		cpd.setSerialNo(flowNo);
 		cpd.setBusinessNo(businessNo);
@@ -292,6 +293,7 @@ public class CreditService {
 		cpd.setCustName(cust_name);
 		cpd.setCertType(cert_type);
 		cpd.setPhone(phoneNo);
+		cpd.setCertNum(cert_num);
 		if (!"".equals(returnxml) || null != returnxml) {
 			HdCreditScoreModel hm = JaxbUtil.readValue(returnxml, HdCreditScoreModel.class);
 			if (CREDIT_HDSUCCESS.equals(hm.getResCode())) {
