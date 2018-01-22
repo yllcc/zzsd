@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,13 +114,15 @@ public class FraudService {
 			CreditFraudDic cpd = new CreditFraudDic();
 			if (FRAUD_SUCCESS.equals(r.getResCode())) {
 				// 韩迪返回查询成功信息
-				String fraudScore = r.getData().get(0).getScore();
+				String fraudScore = r.getData().get(0).getScore();	
 				cpd.setFraudScore(fraudScore);
+				csc.setFraudScore(fraudScore);
 			} else {
 				// 韩迪返回查询错误信息
 				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResMsg());
-				cpd.setFraudScore(score);
-			}
+				cpd.setScore(score);
+				csc.setFraudScore(score);
+			}	
 			cpd.setBusinessNo(businessNo);
 			cpd.setApplyTime(new Date());
 			cpd.setCustName(custName);
@@ -134,8 +135,7 @@ public class FraudService {
 			cpd.setFraudNum(businessNo);
 			// 将反欺诈分数入库
 			this.fraudScoreSave(cpd);
-			csc.setBusinessNo(businessNo);
-			csc.setFraudScore(cpd.getFraudScore());
+			csc.setBusinessNo(businessNo);		
 			csclist.add(csc);
 			log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
 		} catch (Exception e) {
@@ -208,7 +208,7 @@ public class FraudService {
 		} else {
 			byte[] b = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
 			String tradeXml = new String(b, "utf-8");
-			// log.info("333" + tradeXml);
+		    log.info("韩迪返回的反欺诈:" + tradeXml);
 			JSONObject jsonObject = JSON.parseObject(tradeXml);
 			String resCode = jsonObject.getString(FRAUD_RESCODE);
 			String resMsg = jsonObject.getString(FRAUD_RESMSG);
