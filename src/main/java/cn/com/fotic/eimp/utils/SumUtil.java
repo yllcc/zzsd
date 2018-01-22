@@ -12,8 +12,8 @@ import cn.com.fotic.eimp.repository.entity.SexEnum;
  */
 public class SumUtil {
 
-	private final static double rate=2.45;
-	private final static double creditScore=974.5;
+	private final static double rate=1.225;
+	private final static double creditScore=55.75;
 	
 	/**
 	 * 统计区间总分
@@ -68,18 +68,18 @@ public class SumUtil {
 	}
 	
 	public static void main(String[] args) {
-		BankCredit bankCredit=new BankCredit();
-		bankCredit.setRateCreditcardApprovalCont("4");
-		bankCredit.setRateCreditreporCount("8");
-//		bankCredit.setRateLoanoffLoanopenRatio("1.0");
-//		bankCredit.setRateNoaccountFirstendBal("0");
-//		bankCredit.setRateCreditAccountCount("9");
-//		bankCredit.setRateNormalAvenotusedlimitrat("75.0");
-//		bankCredit.setRateRecentlyOpencardLimit("80000");
-//		bankCredit.setRateFirstnoaccountCardage("80");
-//		bankCredit.setRateMaritalState("未婚");
-//		bankCredit.setRateEduLevel("大专");
-		System.out.println(countScore(bankCredit));
-		//System.out.println(getCreditScore("598"));
+//		BankCredit bankCredit=new BankCredit();
+//		bankCredit.setRateCreditcardApprovalCont("4");
+//		bankCredit.setRateCreditreporCount("8");
+////		bankCredit.setRateLoanoffLoanopenRatio("1.0");
+////		bankCredit.setRateNoaccountFirstendBal("0");
+////		bankCredit.setRateCreditAccountCount("9");
+////		bankCredit.setRateNormalAvenotusedlimitrat("75.0");
+////		bankCredit.setRateRecentlyOpencardLimit("80000");
+////		bankCredit.setRateFirstnoaccountCardage("80");
+////		bankCredit.setRateMaritalState("未婚");
+////		bankCredit.setRateEduLevel("大专");
+//		System.out.println(countScore(bankCredit));
+		System.out.println(getCreditScore("373"));
 	}
 }
