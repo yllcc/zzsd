@@ -55,6 +55,8 @@ public class CreditFraudDic {
 	private String appltPerson;// 申请人
 	@Column(name="FRAUD_SCORE")
 	private String fraudScore;// 反欺诈评分
+	@Column(name="SCORE")
+	private String score;// 信贷系统评分
 	@Column(name="CHECK_TIME")
 	private Date checkTime;// 查证时间
 	@Column(name="RESPONSE_BODY")
