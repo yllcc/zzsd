@@ -114,13 +114,13 @@ public class FraudController {
 	public void callbackQueueConsumer(String businessNo) {
 		String content = fraudRedisTemplate.opsForValue().get(businessNo);
 		// 回调信贷,有可能存在回调信贷，信贷没有及时接收到。信贷没有接受成功，默认回调三次。
-		log.info(businessNo + "：反欺回调,第三步：" + content);
+		log.info(businessNo + "：反欺诈回调,第三步：" + content);
 		boolean a = false;
 		for (int i = 0; i < 3; i++) {
 			a = fraudService.fraudCallBack(content);
 			if (a == true) {
 				fraudRedisTemplate.delete(businessNo);
-				log.info(businessNo + "征信结束处理完成，已从redis队列删除。");
+				log.info(businessNo + "反欺诈结束处理完成，已从redis队列删除。");
 				break;
 			} else {
 				a = false;
