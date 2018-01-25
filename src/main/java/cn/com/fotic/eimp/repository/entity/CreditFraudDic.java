@@ -61,6 +61,10 @@ public class CreditFraudDic {
 	private Date checkTime;// 查证时间
 	@Column(name="RESPONSE_BODY")
 	private String responseBody;
+	@Column(name="IDENTIFY_CODE")
+	private String identifyCode;// 验证码
+	@Column(name="IDENTIFY_INFO")
+	private String identifyInfo;//验证信息
 	@Column(name="ATTRIBUTES1")
 	private String attributes1;// 字段1
 	@Column(name="ATTRIBUTES2")
