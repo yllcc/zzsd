@@ -23,9 +23,12 @@ import cn.com.fotic.eimp.model.CallBackUserCreditModel;
 import cn.com.fotic.eimp.model.HdAntiFraudModel;
 import cn.com.fotic.eimp.model.HdCreditReturnContentModel;
 import cn.com.fotic.eimp.model.HdCreditReturnModel;
+import cn.com.fotic.eimp.model.HdCreditVerReturnModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.primary.CreditFraudRepository;
 import cn.com.fotic.eimp.repository.entity.CreditFraudDic;
+import cn.com.fotic.eimp.repository.entity.IdentifyCodeEnum;
+import cn.com.fotic.eimp.model.HdCreditVerReturnContentModel;
 import cn.com.fotic.eimp.utils.Base64Utils;
 import cn.com.fotic.eimp.utils.HttpUtil;
 import cn.com.fotic.eimp.utils.JaxbUtil;
@@ -72,6 +75,9 @@ public class FraudService {
 
 	@Value("${hd.fraud.ProductItemCode}")
 	private String ProductItemCode;// 产品子项
+	
+	@Value("${hd.fraud.ProductItemCodeVer}")
+	private String ProductItemCodeVer;//反欺诈校验
 
 	@Value("${xd.fraudurl}")
 	private String fraudUrl;// 回调反欺诈URL
@@ -98,6 +104,7 @@ public class FraudService {
 		CallBackUserCreditContentModel csc = new CallBackUserCreditContentModel();
 		List<CallBackUserCreditContentModel> csclist = new ArrayList<CallBackUserCreditContentModel>();
 		UserCreditQueneModel user = JaxbUtil.readValue(creditjson, UserCreditQueneModel.class);
+		CreditFraudDic cpd = new CreditFraudDic();
 		String flowNo = user.getFlowNo();
 		String businessNo = user.getBusinessNo();
 		String idType = user.getIdType();
@@ -105,13 +112,24 @@ public class FraudService {
 		String custName = user.getCustName();
 		String phoneNo = user.getPhoneNo();
 		String accessToken = user.getAccessToken();
+		try {
+			//数据请求韩迪接口,进行校验用户名,身份证,手机号
+			String xmlVer=this.HdFraudVerXml(idNo, custName, phoneNo);
+			HdCreditVerReturnModel hv=this.hdCreditVer(xmlVer);
+			//韩迪返回校验结果
+			String verifyCode=hv.getData().get(0).getVerifyCode();
+			cpd.setIdentifyCode(verifyCode);
+			cpd.setIdentifyInfo(IdentifyCodeEnum.getInfo(verifyCode));
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 		// 1.生成xml
 		String xml = this.HdFraudService(idNo, custName);
 		// 2.进行数据加密,发送数据给韩迪hd.fraud.channelId
 		log.info("接口请求上送的:"+xml);
 		try {
 			HdCreditReturnModel r = this.hdCreditService(xml);
-			CreditFraudDic cpd = new CreditFraudDic();
+		
 			if (FRAUD_SUCCESS.equals(r.getResCode())) {
 				// 韩迪返回查询成功信息
 				String fraudScore = r.getData().get(0).getScore();	
@@ -311,4 +329,102 @@ public class FraudService {
 		}
 		return true;
 	}
+	
+	/**
+	 * 调用翰迪接口,反欺诈校验接口验证信息  1.生成xml
+	 * 
+	 * @param idNo
+	 * @param custName
+	 * @return
+	 */
+	public String HdFraudVerXml(String idNo, String custName,String phone) {
+		HdAntiFraudModel hd = new HdAntiFraudModel();
+		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
+		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
+		hd.setSendTime(sendTime);
+		hd.setTransCode(transCode);
+		hd.setVersion(version);
+		hd.setApplication(application);
+		hd.setCertNo(idNo);
+		hd.setChannelId(channelId);
+		hd.setMobile(phone);
+		hd.setChannelOrderId(JaxbUtil.getRandomStringByLength(30));
+		hd.setIp(FRAUD_EMPTY);
+		hd.setLinkedMerchantId(LinkedMerchantId);
+		hd.setMobile(FRAUD_EMPTY);
+		hd.setName(custName);
+		hd.setOpenId(FRAUD_EMPTY);
+		hd.setEmail(FRAUD_EMPTY);
+		hd.setImei(FRAUD_EMPTY);
+		hd.setAddress(FRAUD_EMPTY);
+		hd.setAddress(FRAUD_EMPTY);
+		hd.setBankCard(FRAUD_EMPTY);
+		hd.setProductItemCode(ProductItemCodeVer);
+		hd.setWifiMac(FRAUD_EMPTY);
+		hd.setMac(FRAUD_EMPTY);
+		String xmlReq = JaxbUtil.convertToXml(hd);
+		return xmlReq;
+	}
+	
+	/**
+	 * 调用翰迪接口 校验验证信息,加密请求数据
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public  HdCreditVerReturnModel hdCreditVer(String xml) throws Exception {
+		HdCreditVerReturnModel hrm = new HdCreditVerReturnModel();
+		String mkey = UUID.randomUUID().toString();
+		// 加密报文体格式：BASE64(商户号)| BASE64(RSA(报文加密密钥))| BASE64(3DES(报文原文))
+		String strKey = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), publicKey);
+		String strxml = new String(
+				Base64Utils.encode(ThreeDESUtils.encrypt(xml.toString().getBytes("utf-8"), mkey.getBytes())));
+		String returnXml = new String(Base64Utils.encode(hdChannelId.getBytes("utf-8"))) + "|" + strKey + "|" + strxml;
+		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
+		if (StringUtils.isNotEmpty(reutrnResult)) {
+		String xmlArr[] = reutrnResult.split("\\|");
+		if (xmlArr[0].equals("0")) {
+			String error=new String(Base64Utils.decode(xmlArr[2]), "utf-8");
+			hrm.setResCode("01");
+			hrm.setResMsg(error);
+			return hrm;
+		} else {
+			byte[] b = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
+			String tradeXml = new String(b, "utf-8");
+		    log.info("韩迪返回的反欺诈校验:" + tradeXml);
+			JSONObject jsonObject = JSON.parseObject(tradeXml);
+			String resCode = jsonObject.getString(FRAUD_RESCODE);
+			String resMsg = jsonObject.getString(FRAUD_RESMSG);
+			if ((FRAUD_SUCCESS).equals(resCode)) {
+				// 判断是否存在content
+				if (jsonObject.containsKey(FRAUD_DATA)) {
+					String value = jsonObject.getString(FRAUD_DATA);
+					JSON.parseArray(value, HdCreditVerReturnContentModel.class);
+					List<HdCreditVerReturnContentModel> contentList = JSON.parseArray(value,
+							HdCreditVerReturnContentModel.class);
+					List<HdCreditVerReturnContentModel> list = new ArrayList<HdCreditVerReturnContentModel>();
+					for (HdCreditVerReturnContentModel data : contentList) {
+						HdCreditVerReturnContentModel r = new HdCreditVerReturnContentModel();
+						r.setVerifyCode(data.getVerifyCode());
+						r.setResultCode(data.getResultCode());
+						r.setItemId(data.getItemId());
+						r.setResMsg(data.getResMsg());
+						list.add(r);
+					}
+					hrm.setData(list);
+					hrm.setResCode(resCode);
+					hrm.setResMsg(resMsg);
+				}
+			} else {
+				hrm.setResCode(resCode);
+				hrm.setResMsg(resMsg);
+			}
+		}
+		}else {
+			hrm.setResCode("02");
+			hrm.setResMsg("未接收到返回信息");
+			return hrm;
+		}
+		return hrm;
+	}	
 }

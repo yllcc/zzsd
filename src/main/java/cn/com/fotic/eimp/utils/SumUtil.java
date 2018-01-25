@@ -57,7 +57,7 @@ public class SumUtil {
 	 * 征信算分
 	 * @param score
 	 * @return
-	 * 征信分 =  2.45  × 京东分 —974.5（结果四舍五入）
+	 * 征信分 =  1.225 ×【京东分】- 55.75（结果四舍五入）
 	 */
 	public static String getCreditScore(String score) {
 		BigDecimal b1 = new BigDecimal(Double.valueOf(score));
