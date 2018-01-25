@@ -29,7 +29,8 @@ public enum IdentifyCodeEnum {
 	//获取验证信息
 	public static String getInfo(String code) {
 		for (IdentifyCodeEnum c : IdentifyCodeEnum.values()) {  
-	        if (code.equals(c.getCode())) {  
+			String editCode="["+'"'+c.getCode()+'"'+"]";
+	        if (code.equals(editCode)) {  
 	            return c.getInfo();  
 	        }  
 	    }
