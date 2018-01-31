@@ -97,12 +97,17 @@ public class FraudController {
 	 */
 	@JmsListener(destination = "${queue.fraudArchiveProcess.destination}", concurrency = "${queue.fraudArchiveProcess.concurrency}")
 	public void processQueueConsumer(String businessNo) {
-		String json = fraudRedisTemplate.opsForValue().get(businessNo);
-		log.info(businessNo + "反欺诈,第二步" + json);
-		CallBackUserCreditModel cm = fraudService.fraudContentService(json);
-		String callbackjson = JSON.toJSONString(cm);
-		fraudRedisTemplate.opsForValue().set(businessNo, callbackjson);
-		fraudJmsMessagingTemplate.convertAndSend(fraudArchiveCallbackQueue, businessNo);
+		try {
+			Thread.sleep(1000);
+			String json = fraudRedisTemplate.opsForValue().get(businessNo);
+			log.info(businessNo + "反欺诈,第二步" + json);
+			CallBackUserCreditModel cm = fraudService.fraudContentService(json);
+			String callbackjson = JSON.toJSONString(cm);
+			fraudRedisTemplate.opsForValue().set(businessNo, callbackjson);
+			fraudJmsMessagingTemplate.convertAndSend(fraudArchiveCallbackQueue, businessNo);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} 
 	}
 
 	/**

@@ -143,11 +143,14 @@ public class CustomerScoreController {
 		// 1.校验数据
 		String requestParam = creditService.longinHttep(request);
 		UserCreditReturnModel um = creditService.verificationCredit(requestParam);
-		// 2.获取流水号
-		String flownNo = creditService.flownNo(requestParam);
-		// 3.返回队列(JSON,流水号)
-		creditRedisTemplate.opsForValue().set(flownNo, requestParam);
-		creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, flownNo);
+		if ("01".equals(um.getReCode())) {
+		    // 2.获取流水号
+		    String flownNo = creditService.flownNo(requestParam);
+		    // 3.返回队列(JSON,流水号)
+		     creditRedisTemplate.opsForValue().set(flownNo, requestParam);
+		     creditJmsMessagingTemplate.convertAndSend(creditArchiveBufferQueue, flownNo);
+		     return um;
+		}
 		return um;
 	}
 }
