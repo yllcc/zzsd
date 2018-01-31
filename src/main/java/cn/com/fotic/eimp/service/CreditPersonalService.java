@@ -106,7 +106,7 @@ public class CreditPersonalService {
 			} else {
 				byte[] reponseByte = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
 				String reponseXml = new String(reponseByte, "utf-8");
-				log.info("3DES(报文)" + reponseXml);
+				//log.info("3DES(报文)" + reponseXml);
 				// log.info("MD5(报文)" + new
 				// String(Base64Utils.encode(Md5Utils.md5ToHexStr(reponseXml).getBytes("utf-8"))));
 				return reponseXml;

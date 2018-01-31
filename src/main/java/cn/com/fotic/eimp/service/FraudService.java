@@ -116,20 +116,26 @@ public class FraudService {
 			//数据请求韩迪接口,进行校验用户名,身份证,手机号
 			String xmlVer=this.HdFraudVerXml(idNo, custName, phoneNo);
 			HdCreditVerReturnModel hv=this.hdCreditVer(xmlVer);
-			//韩迪返回校验结果
-			String verifyCode=hv.getData().get(0).getVerifyCode();
-			cpd.setIdentifyCode(verifyCode);
-			cpd.setIdentifyInfo(IdentifyCodeEnum.getInfo(verifyCode));
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-		// 1.生成xml
-		String xml = this.HdFraudService(idNo, custName);
-		// 2.进行数据加密,发送数据给韩迪hd.fraud.channelId
-		log.info("接口请求上送的:"+xml);
-		try {
+			//韩迪返回反欺诈校验结果
+			if (FRAUD_SUCCESS.equals(hv.getResCode())) {
+				List<String> verifyCodeList=hv.getData().get(0).getVerifyCode();
+				String verifyCodes="";
+				String  verInformations="";
+				for(String verifyCode : verifyCodeList) {
+					 verifyCodes+=verifyCode+",";
+					 verInformations+=IdentifyCodeEnum.getInfo(verifyCode)+",";
+				}
+				cpd.setIdentifyCode(verifyCodes);
+				cpd.setIdentifyInfo(verInformations);
+			} else {
+				// 韩迪反欺诈返回查询错误信息
+				log.info("反欺诈校验处理失败:业务流水号：" + businessNo + ",韩迪返回失败原因："+ hv.getResCode()+ hv.getResMsg());
+			}	
+		    // 1.请求韩迪反欺诈生成xml
+		    String xml = this.HdFraudService(idNo, custName, phoneNo);
+		    // 2.进行数据加密,发送数据给韩迪hd.fraud.channelId
+		    log.info("接口请求上送的:"+xml);
 			HdCreditReturnModel r = this.hdCreditService(xml);
-		
 			if (FRAUD_SUCCESS.equals(r.getResCode())) {
 				// 韩迪返回查询成功信息
 				String fraudScore = r.getData().get(0).getScore();	
@@ -137,7 +143,7 @@ public class FraudService {
 				csc.setFraudScore(fraudScore);
 			} else {
 				// 韩迪返回查询错误信息
-				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因：" + r.getResMsg());
+				log.info("反欺诈处理失败,业务流水号：" + businessNo + ",韩迪返回失败原因："+r.getResCode() + r.getResMsg());
 				cpd.setScore(score);
 				csc.setFraudScore(score);
 			}	
@@ -157,8 +163,8 @@ public class FraudService {
 			csclist.add(csc);
 			log.info("反欺诈入库处理成功,业务流水号：" + businessNo);
 		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		e.printStackTrace();
+	}
 		cs.setAccessToken(accessToken);
 		cs.setReqTime(user.getReqTime());
 		cs.setFlowNo(user.getFlowNo());
@@ -173,7 +179,8 @@ public class FraudService {
 	 * @param custName
 	 * @return
 	 */
-	public String HdFraudService(String idNo, String custName) {
+	public String HdFraudService(String idNo, String custName, String phone) {
+		String channelOrderId=UUID.randomUUID().toString().replaceAll("-", "").substring(0, 30);
 		HdAntiFraudModel hd = new HdAntiFraudModel();
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
@@ -183,15 +190,14 @@ public class FraudService {
 		hd.setApplication(application);
 		hd.setCertNo(idNo);
 		hd.setChannelId(channelId);
-		hd.setChannelOrderId(JaxbUtil.getRandomStringByLength(30));
+		hd.setChannelOrderId(channelOrderId);
 		hd.setIp(FRAUD_EMPTY);
 		hd.setLinkedMerchantId(LinkedMerchantId);
-		hd.setMobile(FRAUD_EMPTY);
+		hd.setMobile(phone);
 		hd.setName(custName);
 		hd.setOpenId(FRAUD_EMPTY);
 		hd.setEmail(FRAUD_EMPTY);
 		hd.setImei(FRAUD_EMPTY);
-		hd.setAddress(FRAUD_EMPTY);
 		hd.setAddress(FRAUD_EMPTY);
 		hd.setBankCard(FRAUD_EMPTY);
 		hd.setProductItemCode(ProductItemCode);
@@ -338,6 +344,7 @@ public class FraudService {
 	 * @return
 	 */
 	public String HdFraudVerXml(String idNo, String custName,String phone) {
+		String channelOrderId=UUID.randomUUID().toString().replaceAll("-", "").substring(0, 30);
 		HdAntiFraudModel hd = new HdAntiFraudModel();
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
@@ -348,15 +355,13 @@ public class FraudService {
 		hd.setCertNo(idNo);
 		hd.setChannelId(channelId);
 		hd.setMobile(phone);
-		hd.setChannelOrderId(JaxbUtil.getRandomStringByLength(30));
+		hd.setChannelOrderId(channelOrderId);
 		hd.setIp(FRAUD_EMPTY);
 		hd.setLinkedMerchantId(LinkedMerchantId);
-		hd.setMobile(FRAUD_EMPTY);
 		hd.setName(custName);
 		hd.setOpenId(FRAUD_EMPTY);
 		hd.setEmail(FRAUD_EMPTY);
 		hd.setImei(FRAUD_EMPTY);
-		hd.setAddress(FRAUD_EMPTY);
 		hd.setAddress(FRAUD_EMPTY);
 		hd.setBankCard(FRAUD_EMPTY);
 		hd.setProductItemCode(ProductItemCodeVer);

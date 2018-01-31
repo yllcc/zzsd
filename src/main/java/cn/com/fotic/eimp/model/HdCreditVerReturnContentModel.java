@@ -17,7 +17,7 @@ public class HdCreditVerReturnContentModel implements Serializable {
 	private static final long serialVersionUID = 2690024932905963095L;
 	    private String resultCode;
 	    private String resMsg;
-	    private String verifyCode;
+	    private List<String> verifyCode;
 	    private String itemId;
 	    public void setResultCode(String resultCode) {
 	         this.resultCode = resultCode;
@@ -32,11 +32,11 @@ public class HdCreditVerReturnContentModel implements Serializable {
 	     public String getResMsg() {
 	         return resMsg;
 	     }
-	     
-		public String getVerifyCode() {
+	   
+		public List<String> getVerifyCode() {
 			return verifyCode;
 		}
-		public void setVerifyCode(String verifyCode) {
+		public void setVerifyCode(List<String> verifyCode) {
 			this.verifyCode = verifyCode;
 		}
 		public void setItemId(String itemId) {
