@@ -23,7 +23,8 @@ import lombok.Data;
      "name",     
      "cid",     
      "mobile",
-     "cardNo"
+     "cardNo",
+     "bankCard"
 })  
 public class HdCreditRequestModel implements Serializable {
 
@@ -38,4 +39,5 @@ public class HdCreditRequestModel implements Serializable {
 	private String cid;// 身份证号
 	private String mobile;// 手机号
 	private String cardNo;// 银行卡号
+	private String bankCard;// 银行卡号
 }

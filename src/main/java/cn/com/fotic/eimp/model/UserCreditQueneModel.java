@@ -19,6 +19,7 @@ public class UserCreditQueneModel implements Serializable {
 	private String idNo;
 	private String custName;
 	private String phoneNo;
+	private String flag;
 	
 	public String getReqTime() {
 		return reqTime;
@@ -74,6 +75,12 @@ public class UserCreditQueneModel implements Serializable {
 	}
 	public void setPhoneNo(String phoneNo) {
 		this.phoneNo = phoneNo;
+	}
+	public String getFlag() {
+		return flag;
+	}
+	public void setFlag(String flag) {
+		this.flag = flag;
 	}
 	
     
