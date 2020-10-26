@@ -78,6 +78,7 @@ public class CustomerScoreController {
 				user.setIdNo(userCredit.getIdNo());
 				user.setIdType(userCredit.getIdType());
 				user.setPhoneNo(userCredit.getPhoneNo());
+				user.setFlag(userCredit.getFlag());
 				user.setAccessToken(accessToken);
 				user.setFlowNo(flowNo);
 				user.setReqTime(reqTime);

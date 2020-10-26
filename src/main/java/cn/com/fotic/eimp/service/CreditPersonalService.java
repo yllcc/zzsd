@@ -120,4 +120,80 @@ public class CreditPersonalService {
 			return errormsg;
 		}
 	}
+	
+	/**
+	 * 请求腾讯征信分xml
+	 * @param UserCreditQueneModel
+	 * @return xml
+	 */
+	public String getTXCreditRequestXml(UserCreditQueneModel model) {
+		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
+		String sendTime = df.format(new Date());// new Date()为获取当前系统时间
+		HdCreditRequestModel requestModel = new HdCreditRequestModel();
+		requestModel.setApplication(application);
+		requestModel.setVersion("2.0.0");
+		requestModel.setSendTime(sendTime);
+		requestModel.setTransCode("300614");
+		requestModel.setChannelId("channelId");
+		requestModel.setChannelOrderId(JaxbUtil.getRandomStringByLength(30));
+		requestModel.setName(model.getCustName());
+		requestModel.setCid(model.getIdNo());
+		requestModel.setMobile(model.getPhoneNo());
+		requestModel.setBankCard("");
+		String xmlReq = JaxbUtil.convertToXml(requestModel);
+		log.info("腾讯征信分接口请求报文:"+xmlReq);
+		return xmlReq;
+	}
+	
+	/**
+	 * 腾讯分征信请求
+	 * BASE64(渠道代码)| BASE64(RSA(报文加密密钥))| BASE64(3DES(XML报文原文))
+	 * @param xml
+	 * @return
+	 * @throws Exception
+	 */
+	public String sendTXCredit(String requestXml) throws Exception {
+//		String mkey = UUID.randomUUID().toString();
+//		String rsaXml = RSAUtils.encryptByPublicKey(new String(mkey.getBytes(), "utf-8"), key);
+//		String desXml = new String(
+//				Base64Utils.encode(ThreeDESUtils.encrypt(requestXml.toString().getBytes("utf-8"), mkey.getBytes())));
+//		String returnXml = new String(Base64Utils.encode("11000000".getBytes("utf-8"))) + "|" + rsaXml + "|" + desXml;
+//		String reutrnResult = HttpUtil.sendXMLDataByPost(URL, returnXml);
+//		String errormsg = "";
+//		if (StringUtils.isNotEmpty(reutrnResult)) {
+//			String xmlArr[] = reutrnResult.split("\\|");
+//			if ("0".equals(xmlArr[0])) {
+//				String error=new String(Base64Utils.decode(xmlArr[2]), "utf-8");
+//				HdCreditScoreModel hm =new HdCreditScoreModel();
+//				hm.setResCode("02");
+//				hm.setResMsg(error);
+//				errormsg=JSON.toJSONString(hm);
+//				return errormsg;
+//			} else {
+//				byte[] reponseByte = ThreeDESUtils.decrypt(Base64Utils.decode(xmlArr[1]), mkey.getBytes());
+//				String reponseXml = new String(reponseByte, "utf-8");
+//				//log.info("3DES(报文)" + reponseXml);
+//				// log.info("MD5(报文)" + new
+//				// String(Base64Utils.encode(Md5Utils.md5ToHexStr(reponseXml).getBytes("utf-8"))));
+//				return reponseXml;
+//			}
+//		} else {
+//			HdCreditScoreModel hm =new HdCreditScoreModel();
+//			hm.setResCode("01");
+//			hm.setResMsg("未接收到返回信息");
+//			errormsg=JSON.toJSONString(hm);
+//			log.info(errormsg);
+//			return errormsg;
+//		}
+		String ss="{"+'"'+"resCode"+'"'+":"+'"'+"0000"+'"'+","+'"'+"resMsg"+'"'+":"+'"'+"验证成功"+'"'+","+'"'+"data"+'"'+":{"+'"'+"riskScore"+'"'+":58,"+'"'+"riskInfo"+'"'+":[{"+'"'+"riskCode"+'"'+":5,"+'"'+"riskCodeValue"+'"'+":2}]}}";
+		return ss;
+	}
+	public static void main(String[] args) {
+		String ss="{"+'"'+"resCode"+'"'+":"+'"'+"0000"+'"'+","+'"'+"resMsg"+'"'+":"+'"'+"验证成功"+'"'+","+'"'+"data"+'"'+":{"+'"'+"riskScore"+'"'+":58,"+'"'+"riskInfo"+'"'+":[{"+'"'+"riskCode"+'"'+":5,"+'"'+"riskCodeValue"+'"'+":2}]}}";
+		System.out.println(ss);
+		double i=4.9;
+		int s=88;
+		String sss="373";
+		System.out.println(i*s);
+	}
 }

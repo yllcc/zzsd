@@ -2,6 +2,8 @@ package cn.com.fotic.eimp.utils;
 
 import java.math.BigDecimal;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import cn.com.fotic.eimp.repository.entity.BankCredit;
 import cn.com.fotic.eimp.repository.entity.MaritalEducation;
 import cn.com.fotic.eimp.repository.entity.Score;
@@ -15,6 +17,8 @@ public class SumUtil {
 	private final static double rate=1.225;
 	private final static double creditScore=55.75;
 	
+	@Value("${hd.creditDefault.score}")
+	private static String defaultScore;
 	/**
 	 * 统计区间总分
 	 * @param bankCredit
@@ -65,6 +69,21 @@ public class SumUtil {
 		BigDecimal b3=b1.multiply(b2);
 		BigDecimal result=b3.subtract(new BigDecimal(creditScore)).setScale(0,BigDecimal.ROUND_HALF_UP);
 		return result.toString();
+	}
+	
+	/**
+	 * 征信算分
+	 * @param score
+	 * @return
+	 * 【征信分】 = 4.9×【腾讯分】+ 373
+	 */
+	public static BigDecimal getTencentCreditScore(String score) {
+		double rate=4.9;
+		BigDecimal b1 = new BigDecimal(Double.valueOf(score));
+		BigDecimal b2 = new BigDecimal(rate);
+		BigDecimal b3=b1.multiply(b2);
+		//BigDecimal result=b3.add(new BigDecimal(defaultScore)).setScale(0,BigDecimal.ROUND_HALF_UP);
+		return b3;
 	}
 	
 	public static void main(String[] args) {

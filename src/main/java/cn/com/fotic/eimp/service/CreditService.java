@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -11,17 +12,22 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+
 import cn.com.fotic.eimp.model.CallBackCustomerScoreContentModel;
 import cn.com.fotic.eimp.model.CallBackCustomerScoreModel;
 import cn.com.fotic.eimp.model.HdCreditScoreContentModel;
 import cn.com.fotic.eimp.model.HdCreditScoreModel;
+import cn.com.fotic.eimp.model.TencentCreditScoreModel;
 import cn.com.fotic.eimp.model.UserCreditContentModel;
 import cn.com.fotic.eimp.model.UserCreditQueneModel;
 import cn.com.fotic.eimp.model.UserCreditReturnModel;
@@ -98,8 +104,9 @@ public class CreditService {
 		String custName = user.getCustName();
 		String phoneNo = user.getPhoneNo();
 		String flowNo = user.getFlowNo();
+		String flag = user.getFlag();
 		try {
-			String score = this.saveInformation(flowNo, businessNo, custName, idType, idNo, phoneNo);
+			String score = this.saveInformation(flowNo, businessNo, custName, idType, idNo, phoneNo,flag);
 			csc.setBusinessNo(businessNo);
 			csc.setCustomScoree(score);
 			csclist.add(csc);
@@ -342,8 +349,67 @@ public class CreditService {
 	}
 
 	/**
+	 * 调用腾讯征信分
+	 * (字段Attributes1为区分调用接口源，为空（null）的是京东，2、腾讯 )
+	 * @param flowNo
+	 * @param businessNo
+	 * @param cust_name
+	 * @param cert_type
+	 * @param cert_num
+	 * @param phoneNo
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
+	public CreditPersonalDic sendTencentPost(String flowNo, String businessNo, String cust_name, String cert_type,
+			String cert_num, String phoneNo,String type) throws Exception {
+			UserCreditQueneModel user = new UserCreditQueneModel();
+			user.setBusinessNo(businessNo);
+			user.setCustName(cust_name);
+			user.setIdNo(cert_num);
+			user.setPhoneNo(phoneNo);
+			String xml = creditPersonalService.getTXCreditRequestXml(user);
+			
+			String returnxml = creditPersonalService.sendHdCredit(xml);
+			log.info("腾讯分返回的数据:"+returnxml);
+			CreditPersonalDic cpd = new CreditPersonalDic();
+			cpd.setApplyNum(businessNo);
+			cpd.setSerialNo(flowNo);
+			cpd.setBusinessNo(businessNo);
+			cpd.setApplyTime(new Date());
+			cpd.setCustName(cust_name);
+			cpd.setCertType(cert_type);
+			cpd.setPhone(phoneNo);
+			cpd.setCertNum(cert_num);
+			cpd.setAttributes1("2");
+			if (!"".equals(returnxml) || null != returnxml) {
+				TencentCreditScoreModel tencentScoreModel = JaxbUtil.readValue(returnxml, TencentCreditScoreModel.class);
+				if (CREDIT_HDSUCCESS.equals(tencentScoreModel.getResCode())&& null!=tencentScoreModel.getData()) {
+					if(null!=tencentScoreModel.getData().getRiskScore() && !"".equals(tencentScoreModel.getData().getRiskScore())){
+						cpd.setCreditScore(tencentScoreModel.getData().getRiskScore().toString());
+						//【征信分】 = 4.9×【腾讯分】+ 373
+						BigDecimal result=SumUtil.getTencentCreditScore(tencentScoreModel.getData().getRiskScore().toString());
+						cpd.setScore(result.add(new BigDecimal(score)).setScale(0,BigDecimal.ROUND_HALF_UP).toString());
+					}else{
+						cpd.setScore(score);
+					}
+					cpd.setResponseBody(returnxml);
+					log.info("腾讯分值返回入库成功:分数：" +tencentScoreModel.getData().getRiskScore());
+				} else {
+					cpd.setScore(score);
+					cpd.setResponseBody(returnxml);
+				}
+			} else {
+				cpd.setScore(score);
+				cpd.setResponseBody(returnxml);
+			}
+			creditPersonalRepository.save(cpd);
+			return cpd;
+	}
+	
+	/**
 	 * 入库或者发送韩迪http请求
-	 * 
+	 * (flag标识不同接口调用，1代表京东分，2，代表腾讯分。)
 	 * @param token
 	 * @param businessNo
 	 * @param cust_name
@@ -354,11 +420,16 @@ public class CreditService {
 	 * @throws Exception
 	 */
 	public String saveInformation(String flowNo, String businessNo, String cust_name, String cert_type, String cert_num,
-			String phoneNo) throws Exception {
+			String phoneNo,String flag) throws Exception {
 		BankCredit cm = this.creditOracle(businessNo, cust_name, cert_type, cert_num, phoneNo);
 		if (null == cm) {
 			// 查询韩迪返回的数据进行解析评分
-			CreditPersonalDic returnxml = this.sendHdPost(flowNo, businessNo, cust_name, cert_type, cert_num, phoneNo);
+			CreditPersonalDic returnxml = null;
+			if("1".equals(flag)){
+				returnxml=this.sendHdPost(flowNo, businessNo, cust_name, cert_type, cert_num, phoneNo);
+			}else{
+				returnxml=this.sendTencentPost(flowNo, businessNo, cust_name, cert_type, cert_num, phoneNo,"tengxun");
+			}
 			String score = returnxml.getScore();
 			return score;
 		} else {

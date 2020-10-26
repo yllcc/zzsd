@@ -39,7 +39,5 @@ public class BankCreditRepositoryTest {
 		bankCredit.setAttributes1("1");
 		bankCredit.setAttributes2("asas");
 		BankCreditRepository.save(bankCredit);
-		BankCredit s=BankCreditRepository.getOptName(2);
-		System.out.println(s.toString());
 	}
 }
